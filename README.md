@@ -1,240 +1,440 @@
-# Inventory API
+# CCTV Inventory API
 
-Backend REST API untuk sistem manajemen stok inventory menggunakan
-Laravel 12.
+REST API untuk sistem manajemen inventory CCTV menggunakan Laravel.
 
-Project ini menyediakan fitur pengelolaan master data, transaksi stok,
-histori pergerakan barang, dan dashboard ringkasan inventory.
+Project ini digunakan untuk mengelola data barang, kategori, supplier/brand, harga jual, serta pergerakan stok barang.
+
+---
 
 ## Tech Stack
 
--   Laravel 12
--   PHP 8.2+
--   MySQL
--   Laravel Sanctum
--   Docker
--   Postman
+- Laravel 12
+- PHP 8.2+
+- MySQL
+- Laravel Sanctum Authentication
+- Laravel Excel (Maatwebsite)
+- REST API
 
-## Features
+---
 
-### Authentication
+# Fitur
 
--   Login user menggunakan Laravel Sanctum
--   Logout user
--   Token based authentication
+## Authentication
 
-Endpoint:
+- Login menggunakan email dan password
+- Token authentication menggunakan Laravel Sanctum
+- Logout user
 
-    POST /api/auth/login
-    POST /api/auth/logout
+---
+
+## Master Data
 
 ### Category Management
 
-CRUD kategori barang.
+Mengelola kategori barang.
 
-Endpoint:
+Contoh kategori:
 
-    GET    /api/categories
-    POST   /api/categories
-    GET    /api/categories/{id}
-    PUT    /api/categories/{id}
-    DELETE /api/categories/{id}
+- CCTV
+- Accessories
 
-### Supplier Management
+Fitur:
 
-CRUD data supplier.
+- Create category
+- Read category
+- Update category
+- Delete category
 
-Endpoint:
+---
 
-    GET    /api/suppliers
-    POST   /api/suppliers
-    GET    /api/suppliers/{id}
-    PUT    /api/suppliers/{id}
-    DELETE /api/suppliers/{id}
+### Supplier / Brand Management
+
+Supplier digunakan sebagai brand produk.
+
+Brand CCTV yang digunakan:
+
+- EZVIZ
+- HIKVISION
+- DAHUA
+- IMOU
+- HILOOK
+
+Accessories dapat memiliki supplier kosong karena tidak memiliki brand khusus.
+
+---
 
 ### Item Management
 
-CRUD barang inventory.
+Mengelola data barang inventory.
 
-Fitur: - Relasi kategori dan supplier - Auto generate kode barang -
-Pengelolaan harga beli dan harga jual - Pengaturan minimum stok
+Data item berasal dari file Excel **STOK BARANG**.
 
-Contoh kode barang:
+Data yang diimport:
 
-    ITM-000001
-    ITM-000002
+| Excel | Database |
+|---|---|
+| KODE BARANG | code |
+| MERK | supplier |
+| NAMA PRODUK | name |
+| DESKRIPSI | description |
+| SATUAN | unit |
+| STOK AWAL | stock |
 
-Endpoint:
+Contoh:
 
-    GET    /api/items
-    POST   /api/items
-    GET    /api/items/{id}
-    PUT    /api/items/{id}
-    DELETE /api/items/{id}
+```
+EZ-003
+H6C 3MP
+EZVIZ
+Pcs
+```
 
-### Stock Transaction
+---
 
-#### Stock In
+# Import Excel
 
-Menambahkan stok barang dan mencatat histori transaksi.
+Project menggunakan Laravel Excel untuk proses import data.
 
-    POST /api/stock-in
+## 1. Import Stok Barang
 
-Proses:
+Sumber:
 
-    Request Stock In
-            |
-            v
-    Create Stock Movement (IN)
-            |
-            v
-    Tambah stok item
-            |
-            v
-    Update harga beli
+```
+STOK BARANG.xlsx
+```
 
-#### Stock Out
+Digunakan untuk membuat:
 
-Mengurangi stok barang dengan validasi ketersediaan stok.
+```
+items
+```
 
-    POST /api/stock-out
+---
 
-Jika stok tidak mencukupi sistem mengembalikan error:
+## 2. Import Pricelist
 
-``` json
+Sumber:
+
+```
+PRICELIST.xlsx
+```
+
+Harga yang digunakan:
+
+```
+PERSONAL
+```
+
+Data masuk ke:
+
+```
+item_prices
+```
+
+Contoh:
+
+```
+EZ-003
+H6C 3MP
+
+Harga Personal:
+458000
+```
+
+---
+
+# Database Structure
+
+Relasi utama:
+
+```
+suppliers
+      |
+      |
+      v
+items
+      |
+      +----------------+
+                       |
+                       v
+                item_prices
+
+
+items
+      |
+      |
+      v
+stock_movements
+```
+
+---
+
+# Database Table
+
+## suppliers
+
+Menyimpan data brand/supplier.
+
+Contoh:
+
+```
+EZVIZ
+HIKVISION
+DAHUA
+IMOU
+HILOOK
+```
+
+---
+
+## categories
+
+Menyimpan kategori barang.
+
+Contoh:
+
+```
+CCTV
+ACCESSORIES
+```
+
+---
+
+## items
+
+Menyimpan master barang.
+
+Field utama:
+
+```
+id
+supplier_id
+category_id
+code
+name
+description
+purchase_price
+minimum_stock
+unit
+```
+
+---
+
+## item_prices
+
+Menyimpan harga barang.
+
+Saat ini menggunakan:
+
+```
+PERSONAL PRICE
+```
+
+Field:
+
+```
+id
+item_id
+price
+```
+
+---
+
+## stock_movements
+
+Menyimpan histori perubahan stok.
+
+Digunakan untuk:
+
+- Barang masuk
+- Barang keluar
+- Perhitungan stok
+
+---
+
+# API Endpoint
+
+## Authentication
+
+### Login
+
+```
+POST /api/auth/login
+```
+
+Request:
+
+```json
 {
-    "message": "Stock tidak mencukupi untuk transaksi ini.",
-    "errors": {
-        "stock": [
-            "Stock tidak mencukupi."
-        ]
-    }
+    "email": "user@example.com",
+    "password": "password"
 }
 ```
 
-## Stock Movement History
+---
 
-Menyimpan seluruh riwayat perubahan stok.
+### Logout
 
-Data yang dicatat: - Item - User - Tipe transaksi (IN/OUT) - Quantity -
-Harga - Tanggal transaksi - Referensi - Catatan
+```
+POST /api/auth/logout
+```
 
-Endpoint:
+---
 
-    GET /api/stock-movements
-    GET /api/stock-movements/{id}
+# Categories
 
-## Dashboard Summary
+```
+GET     /api/categories
+POST    /api/categories
+GET     /api/categories/{id}
+PUT     /api/categories/{id}
+DELETE  /api/categories/{id}
+```
 
-Menampilkan ringkasan inventory.
+---
 
-Endpoint:
+# Suppliers
 
-    GET /api/dashboard
+```
+GET     /api/suppliers
+POST    /api/suppliers
+GET     /api/suppliers/{id}
+PUT     /api/suppliers/{id}
+DELETE  /api/suppliers/{id}
+```
 
-Informasi: - Total item - Total kategori - Total supplier - Total stok -
-Stock masuk hari ini - Stock keluar hari ini
+---
 
-## Database Relationship
+# Items
 
-    Category
-        |
-        | 1:N
-        |
-    Item
-        |
-        | N:1
-        |
-    Supplier
+```
+GET     /api/items
+POST    /api/items
+GET     /api/items/{id}
+PUT     /api/items/{id}
+DELETE  /api/items/{id}
+```
 
+---
 
-    Item
-        |
-        | 1:N
-        |
-    Stock Movement
+# Stock
 
+## Stock In
 
-    User
-        |
-        | 1:N
-        |
-    Stock Movement
+```
+POST /api/stock-in
+```
 
-## Installation
+## Stock Out
+
+```
+POST /api/stock-out
+```
+
+---
+
+# Development Progress
+
+## Completed
+
+✅ Laravel API setup  
+✅ Authentication with Sanctum  
+✅ Category CRUD  
+✅ Supplier CRUD  
+✅ Item CRUD  
+✅ Excel import system  
+✅ Import STOK BARANG  
+✅ Import PRICELIST Personal  
+✅ Item-price relationship  
+✅ Inventory database structure  
+
+---
+
+## Planned Development
+
+- [ ] Import stok awal ke stock_movements
+- [ ] Dashboard inventory
+- [ ] Stock report
+- [ ] Low stock notification
+- [ ] Transaction history
+- [ ] Frontend React integration
+- [ ] Role permission management
+
+---
+
+# Installation
 
 Clone repository:
 
-``` bash
-git clone https://github.com/PankekCode/inventory-api.git
-cd inventory-api
+```bash
+git clone https://github.com/PankekCode/inventory-cctv.git
+```
+
+Masuk folder:
+
+```bash
+cd inventory-cctv
 ```
 
 Install dependency:
 
-``` bash
+```bash
 composer install
 ```
 
-Setup environment:
+Copy environment:
 
-``` bash
+```bash
 cp .env.example .env
+```
+
+Generate key:
+
+```bash
 php artisan key:generate
 ```
 
-Database migration:
+Setup database:
 
-``` bash
+```bash
 php artisan migrate --seed
 ```
 
-Run application:
+Run server:
 
-``` bash
+```bash
 php artisan serve
 ```
 
-API tersedia pada:
+---
 
-    http://127.0.0.1:8000
+# Environment
 
-## Testing
+Contoh konfigurasi:
 
-API telah diuji menggunakan Postman dengan cakupan:
+```
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=inventory
+DB_USERNAME=root
+DB_PASSWORD=
+```
 
--   Authentication
--   Category CRUD
--   Supplier CRUD
--   Item CRUD
--   Stock In
--   Stock Out
--   Stock Movement
--   Dashboard
--   Validation Handling
--   Error Handling
+---
 
-## Project Structure
+# Notes
 
-    app
-    ├── Http
-    │   ├── Controllers
-    │   ├── Requests
-    │   └── Resources
-    │
-    ├── Models
-    ├── Services
-    └── Enums
+Saat ini sistem fokus pada:
 
-    database
-    ├── migrations
-    └── seeders
+- Master barang
+- Harga personal
+- Inventory management
 
-    routes
-    └── api.php
+Data serial number CCTV belum digunakan sebagai sumber utama karena membutuhkan relasi langsung dengan kode barang agar tidak terjadi kesalahan mapping produk.
+
+---
 
 ## Author
 
 PankekCode
-
-Inventory Management API Project
