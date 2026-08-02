@@ -1,0 +1,22 @@
+# Inventory API
+
+Backend API untuk sistem manajemen stok inventory menggunakan Laravel 12.
+
+## Tech Stack
+
+- Laravel 12
+- PHP
+- MySQL
+- Laravel Sanctum
+- Docker
+
+## Features
+
+- Authentication
+- Category Management
+- Supplier Management
+- Item Management
+- Stock In
+- Stock Out
+- Stock Movement History
+- Dashboard Summary
