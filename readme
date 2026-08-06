@@ -1,22 +1,120 @@
-# Inventory API
+# Kebutuhan Data Backend — Website E-Commerce Hablun CCTV (Update Alur Guest Checkout & OTP WhatsApp)
 
-Backend API untuk sistem manajemen stok inventory menggunakan Laravel 12.
+Disusun berdasarkan: *Laporan Progress Desain UI/UX (3 Agustus 2026)* & *Penyesuaian Alur Kerja Baru (Guest Checkout & OTP WA)*
 
-## Tech Stack
+---
 
-- Laravel 12
-- PHP
-- MySQL
-- Laravel Sanctum
-- Docker
+## 💡 Ringkasan Alur Kerja & Skema Pembelian Baru
 
-## Features
+Website Hablun CCTV mendukung 2 jalur pembelian:
 
-- Authentication
-- Category Management
-- Supplier Management
-- Item Management
-- Stock In
-- Stock Out
-- Stock Movement History
-- Dashboard Summary
+1. **Jalur Tanpa Login (Guest Checkout via OTP WA):**
+   - User dapat langsung memilih produk & paket tanpa perlu login terlebih dahulu.
+   - Pembayaran **khusus Guest hanya diizinkan menggunakan QRIS**.
+   - Sebelum QRIS diterbitkan / pesanan dikonfirmasi, sistem wajib mengirimkan **kode OTP via WhatsApp** ke nomor HP user untuk verifikasi.
+   - **Metode Lacak Pesanan (Tracking):**
+     - **Opsi 1 (Otomatis/Sistem):** User melakukan Login/Daftar dengan Nomor HP yang sama. Sistem secara otomatis menautkan (*auto-link*) seluruh riwayat transaksi guest sebelumnya ke akun user tersebut.
+     - **Opsi 2 (Manual via WhatsApp Admin):** User menyimpan **Kode Pesanan Unik** (`unique_order_code`) yang diterbitkan tiap transaksi untuk dikonfirmasikan/ditanyakan ke Admin via WA.
+
+2. **Jalur Dengan Login (User Terdaftar):**
+   - User login menggunakan Nomor HP.
+   - Saat checkout, **tidak perlu lagi verifikasi OTP** (karena nomor HP sudah terverifikasi saat akun dibuat).
+   - Memiliki akses metode pembayaran yang lebih fleksibel (QRIS, Transfer Bank, E-Wallet).
+
+---
+
+## 1. Halaman Utama (Homepage)
+**Tabel terkait:** `products`, `categories`, `banners`, `brands`
+- **Navbar Menu Utama:** Beranda, Katalog, Servis, Tentang Kami.
+- **Data Hero/Banner:** Judul, deskripsi, gambar promo, tombol CTA.
+- **Kategori Navigasi Cepat:** Wireless, Analog, Grosir.
+- **Produk Pilihan / Unggulan:** Highlight produk dengan flag `is_featured`.
+- **Logo Brand Partner:** EZVIZ, IMOU, Dahua, Hikvision, HiLook.
+- **Personalisasi Tampilan:** Menampilkan nama/avatar jika user login, atau tombol "Login / Masuk" jika belum.
+
+## 2. Katalog Produk
+**Tabel terkait:** `products`, `categories`, `brands`
+- **Daftar Produk dari 5 Brand Utama:** EZVIZ, IMOU, Dahua, Hikvision, HiLook.
+- **Filter & Sorting:** Berdasarkan Kategori (Wireless / Analog / Grosir), Brand, dan Harga.
+- **Card Produk:** Gambar thumbnail, nama produk, brand, harga dasar/mulai dari, rating rata-rata, status stok, dan tombol "Lihat Detail".
+
+## 3. Detail Produk — Wireless
+**Tabel terkait:** `products`, `product_options`, `product_images`, `product_features`, `reviews`
+- **Data Produk:** Nama, brand, rating, deskripsi lengkap, spesifikasi teknis, list fitur unggulan.
+- **Pilihan Varian Paket:**
+  - **Unit saja** (hanya perangkat CCTV).
+  - **Paket Pemasangan** (termasuk unit + jasa instalasi).
+- **Galeri Gambar:** Multiple images per produk.
+- **Tombol Utama:** "Beli Sekarang" (mengarahkan langsung ke Checkout).
+
+## 4. Detail Produk — Analog (Kabel)
+**Tabel terkait:** `products`, `product_camera_options`, `product_images`, `reviews`
+- **Selector Jumlah Kamera (1–16 Unit):** Pilihan paket kamera analog dengan kalkulasi harga dinamis.
+- **Spesifikasi Detail per Konfigurasi:**
+  - Jumlah & tipe kamera (indoor/outdoor, resolusi, ColorVu/Night vision).
+  - Jenis DVR & jumlah channel.
+  - Kapasitas Hardisk (HDD).
+  - Power supply, jenis & panjang kabel, konektor.
+  - Status jasa instalasi (termasuk/tidak) & masa garansi.
+
+## 5. Keranjang Belanja & Checkout (Penggabungan Alur Praktis)
+**Tabel terkait:** `orders`, `order_items`, `phone_verifications`, `payments`
+
+### A. Form Data Pembeli & Pemasangan:
+- **Nama Lengkap & Alamat Pemasangan:** Lokasi detail untuk teknisi.
+- **Nomor WhatsApp Pembeli:** Identitas utama transaksi.
+- **Penjadwalan Instalasi:** Pilihan tanggal & slot waktu kedatangan teknisi (misal: "09:00–11:00").
+
+### B. Kondisi Pembayaran & Verifikasi OTP:
+- **Jika Pembeli Belum Login (Guest):**
+  1. Metode Pembayaran **diunci khusus QRIS**.
+  2. Sistem menembak API WhatsApp Gateway untuk mengirimkan **Kode OTP (4-6 digit)** ke nomor WhatsApp pembeli.
+  3. Pembeli memasukkan kode OTP di modal/pop-up verifikasi.
+  4. Setelah OTP valid, sistem menerbitkan **Dynamic QRIS** untuk discan.
+- **Jika Pembeli Sudah Login:**
+  1. Pembeli bebas memilih metode pembayaran: QRIS, Transfer Bank (BCA/Mandiri), E-Wallet (GoPay/OVO/ShopeePay).
+  2. **Tanpa Verifikasi OTP ulang** (langsung lanjut ke pembayaran).
+
+### C. Aturan Kalkulasi Harga (Aturan Bisnis Backend):
+- ⚠️ **Tanpa Pajak (PPN 0%):** Backend **dilarang** menambahkan PPN 11% otomatis.
+- ⚠️ **Tanpa Double Charge Instalasi:** Jika produk yang dipilih ber-varian "Paket Pemasangan", sistem dilarang menambah biaya "Jasa Pasang" terpisah.
+
+## 6. Konfirmasi Pesanan & Bukti Pembayaran
+**Tabel terkait:** `orders`, `payments`, `order_status_history`
+- **Nomor Pesanan / Kode Unik Pembayaran:** Format `HBL-2026-XXXX` (dibuat unik untuk tiap transaksi).
+- **Rincian Pesanan:** Daftar barang, paket, lokasi instalasi, jadwal teknisi, dan status pembayaran (Pending / Paid).
+- **Opsi Tracking untuk Guest:**
+  - **Petunjuk Lacak via WA:** Tombol "Chat Admin via WA" yang otomatis menyertakan Kode Unik Pesanan.
+  - **Petunjuk Lacak via Akun:** Anjuran untuk Login/Daftar menggunakan nomor WhatsApp yang sama agar transaksi muncul di Dashboard User.
+- **Generate Invoice:** Unduh bukti transaksi format PDF.
+
+## 7. Login & Registrasi (Sistem Autentikasi No. HP)
+**Tabel terkait:** `users`, `orders`
+- **Identitas Utama:** Nomor WhatsApp / Handphone (bukan email).
+- **Sistem OTP saat Registrasi/Login Baru:** Verifikasi kepemilikan nomor HP.
+- **Fitur Auto-Link Guest Orders:**
+  Saat user berhasil Login / Mendaftar, backend secara otomatis melakukan *query*:
+  `UPDATE orders SET user_id = :new_user_id WHERE guest_phone_number = :phone_number AND user_id IS NULL;`
+  Hal ini memastikan seluruh riwayat pembelian *Guest* sebelumnya langsung muncul di halaman "Pesanan Saya".
+
+## 8. Pesanan Saya & Detail Pesanan (Khusus User Login)
+**Tabel terkait:** `orders`, `order_status_history`, `technicians`
+- **Filter Status Pesanan:** Semua / Berlangsung / Selesai / Dibatalkan.
+- **Timeline Progress Status Pemasangan:**
+  `Pesanan Diterima` ➔ `Penjadwalan Teknisi` ➔ `Teknisi Dalam Perjalanan` ➔ `Proses Pemasangan` ➔ `Selesai`.
+- **Informasi Teknisi:** Menampilkan nama, foto, dan kontak WhatsApp teknisi bertugas.
+- **Aksi User:** Tombol "Batalkan Pesanan" (jika belum diproses) & "Chat Teknisi / Admin".
+
+## 9. Profil Saya & Ubah Kata Sandi
+**Tabel terkait:** `users`
+- Pengelolaan foto profil, nama lengkap, nomor WhatsApp utama, email (opsional), dan alamat simpanan.
+- Ubah Kata Sandi (Verifikasi kata sandi lama, kata sandi baru min. 8 karakter kombinasi huruf & angka).
+
+## 10. Halaman Statis: Tentang Kami & Servis
+**Tabel terkait:** `company_profile`, `services`
+- **Tentang Kami:** Profil Hablun CCTV, statistik proyek selesai, komitmen garansi resmi, visi & misi.
+- **Servis:** Layanan Maintenance/Pemeliharaan, Troubleshooting, Konsultasi Sistem CCTV, Enterprise Solution, SLA layanan (maks. 24 jam), serta tombol Konsultasi WA Direct.
+
+## 🛑 Belum Bisa Dikerjakan (Menunggu Desain Dashboard Admin)
+- **Dashboard Admin:** Stok serial number per unit, manajemen status pesanan, penugasan teknisi, laporan penjualan.
+- **Dashboard Super Admin:** Keuangan, log aktivitas, dan kontrol hak akses admin.
