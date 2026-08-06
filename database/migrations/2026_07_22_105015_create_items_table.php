@@ -25,7 +25,6 @@ return new class extends Migration
             $table->string('name');
             $table->text('description')->nullable();
             $table->decimal('purchase_price',15,2);
-            $table->decimal('selling_price',15,2);
             $table->integer('stock')->default(0);
             $table->integer('minimum_stock')->default(0);
             $table->string('unit',30);
