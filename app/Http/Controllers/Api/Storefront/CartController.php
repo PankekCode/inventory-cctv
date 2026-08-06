@@ -19,47 +19,48 @@ class CartController extends Controller
         $user = auth('sanctum')->user();
         $guestToken = $request->query('guest_token');
 
-        $cart = $this->cartService->getCart($user, $guestToken);
+        $cart = $this->cartService->getOrCreate($user, $guestToken);
 
         return response()->json([
-            'data' => $cart->load(['items.productVariant.product', 'items.productVariant.components.item']),
+            'data' => $cart->load(['items.variant.product', 'items.variant.components.item']),
         ]);
     }
 
     public function addItem(AddToCartRequest $request): JsonResponse
     {
         $user = auth('sanctum')->user();
-        $cart = $this->cartService->addItem(
-            $user,
-            $request->validated('guest_token'),
+        $guestToken = $request->validated('guest_token');
+
+        $cart = $this->cartService->getOrCreate($user, $guestToken);
+        $updatedCart = $this->cartService->addItem(
+            $cart,
             (int) $request->validated('product_variant_id'),
             (int) $request->validated('quantity')
         );
 
         return response()->json([
             'message' => 'Produk berhasil ditambahkan ke keranjang.',
-            'data' => $cart->load(['items.productVariant.product']),
+            'data' => $updatedCart,
         ]);
     }
 
     public function updateItem(Request $request, int $itemId): JsonResponse
     {
         $request->validate([
-            'quantity' => ['required', 'integer', 'min:1'],
+            'quantity' => ['required', 'integer', 'min:0'],
             'guest_token' => ['nullable', 'string'],
         ]);
 
         $user = auth('sanctum')->user();
-        $cart = $this->cartService->updateItem(
-            $user,
-            $request->input('guest_token'),
-            $itemId,
-            (int) $request->input('quantity')
-        );
+        $guestToken = $request->input('guest_token');
+
+        $cart = $this->cartService->getOrCreate($user, $guestToken);
+        $cartItem = $cart->items()->where('id', $itemId)->orWhere('product_variant_id', $itemId)->firstOrFail();
+        $updatedCart = $this->cartService->updateItem($cart, $cartItem->product_variant_id, (int) $request->input('quantity'));
 
         return response()->json([
             'message' => 'Jumlah produk berhasil diperbarui.',
-            'data' => $cart->load(['items.productVariant.product']),
+            'data' => $updatedCart,
         ]);
     }
 
@@ -68,11 +69,13 @@ class CartController extends Controller
         $user = auth('sanctum')->user();
         $guestToken = $request->query('guest_token') ?: $request->input('guest_token');
 
-        $cart = $this->cartService->removeItem($user, $guestToken, $itemId);
+        $cart = $this->cartService->getOrCreate($user, $guestToken);
+        $cartItem = $cart->items()->where('id', $itemId)->orWhere('product_variant_id', $itemId)->firstOrFail();
+        $updatedCart = $this->cartService->updateItem($cart, $cartItem->product_variant_id, 0);
 
         return response()->json([
             'message' => 'Produk berhasil dihapus dari keranjang.',
-            'data' => $cart->load(['items.productVariant.product']),
+            'data' => $updatedCart,
         ]);
     }
 }

@@ -13,6 +13,7 @@ class OrderService
      * @var array<string, array<int, string>>
      */
     private const TRANSITIONS = [
+        'awaiting_payment' => ['cancelled'],
         'order_received' => ['technician_scheduled', 'cancelled'],
         'technician_scheduled' => ['technician_en_route', 'cancelled'],
         'technician_en_route' => ['installation_in_progress'],

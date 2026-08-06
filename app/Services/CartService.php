@@ -36,7 +36,7 @@ class CartService
         return Cart::create([
             'public_id' => (string) Str::uuid(),
             'user_id' => $user?->id,
-            'guest_token' => $user ? null : (string) Str::uuid(),
+            'guest_token' => $user ? null : ($guestToken ?: (string) Str::uuid()),
             'status' => 'active',
         ])->load('items.variant.product');
     }
