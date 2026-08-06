@@ -19,7 +19,14 @@ class AuthService
             ]);
         }
 
-        $token = $user->createToken('inventory-api')->plainTextToken;
+        if (!$user->is_active) {
+            throw ValidationException::withMessages([
+                'email' => ['Akun ini tidak aktif.'],
+            ]);
+        }
+
+        $abilities = $user->isAdmin() ? ['admin', 'customer'] : ['customer'];
+        $token = $user->createToken('inventory-api', $abilities)->plainTextToken;
 
         return [
             'user' => $user,

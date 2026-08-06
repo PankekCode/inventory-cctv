@@ -19,6 +19,7 @@ class Item extends Model
         'description',
         'purchase_price',
         'stock',
+        'stock_reserved',
         'minimum_stock',
         'unit'
     ];
@@ -54,5 +55,20 @@ class Item extends Model
     public function serialNumbers(): HasMany
     {
         return $this->hasMany(ItemSerialNumber::class);
+    }
+
+    public function variantComponents(): HasMany
+    {
+        return $this->hasMany(ProductVariantComponent::class);
+    }
+
+    public function reservations(): HasMany
+    {
+        return $this->hasMany(InventoryReservation::class);
+    }
+
+    public function getAvailableStockAttribute(): int
+    {
+        return max(0, $this->stock - $this->stock_reserved);
     }
 }
