@@ -1,0 +1,717 @@
+# Dokumentasi API — Website E-Commerce Hablun CCTV & Internal Inventory
+
+Dokumentasi resmi REST API untuk sistem E-Commerce Hablun CCTV (Storefront) dan Sistem Manajemen Stok Internal (Inventory Management).
+
+---
+
+## 📌 Informasi Umum
+
+- **Base URL:** `http://localhost:8000/api`
+- **Format Content-Type:** `application/json`
+- **Format Accept:** `application/json`
+- **Autentikasi Token:** `Bearer <sanctum_token>` (Header `Authorization: Bearer <token>`)
+
+---
+
+## 🛍️ PART 1: Storefront E-Commerce API (Customer App)
+
+### 1. Katalog & Halaman Publik
+
+#### 1.1 Home / Beranda
+Mengambil seluruh data beranda (banner promo aktif, kategori navigasi, produk unggulan, dan brand partner).
+
+- **Endpoint:** `GET /storefront/home`
+- **Headers:** `Accept: application/json`
+- **Response Contoh (200 OK):**
+```json
+{
+  "data": {
+    "banners": [
+      {
+        "id": 1,
+        "title": "Promo Merdeka CCTV Wireless",
+        "description": "Diskon hingga 20% untuk paket Ezviz",
+        "image_path": "banners/promo1.jpg",
+        "cta_label": "Beli Sekarang",
+        "cta_url": "/katalog?category=wireless"
+      }
+    ],
+    "categories": [
+      {
+        "id": 1,
+        "name": "Wireless",
+        "slug": "wireless",
+        "image_path": "categories/wireless.jpg"
+      }
+    ],
+    "featured_products": {
+      "data": [
+        {
+          "id": 1,
+          "name": "EZVIZ H6c 3MP Smart Wi-Fi Camera",
+          "slug": "ezviz-h6c-3mp",
+          "product_type": "wireless",
+          "starting_price": 458000,
+          "average_rating": 4.8,
+          "review_count": 12
+        }
+      ]
+    },
+    "brands": [
+      {
+        "id": 1,
+        "name": "EZVIZ",
+        "slug": "ezviz",
+        "logo_path": "brands/ezviz.png"
+      }
+    ]
+  }
+}
+```
+
+---
+
+#### 1.2 Katalog Produk (Index & Filter)
+Mengambil daftar produk katalog dengan pencarian, filter, dan pagination.
+
+- **Endpoint:** `GET /storefront/products`
+- **Query Parameters:**
+  - `search` (string, opsional): Pencarian nama/deskripsi produk.
+  - `category` (string, opsional): Slug kategori (misal: `wireless`, `analog`).
+  - `brand` (string, opsional): Slug brand (misal: `ezviz`, `dahua`).
+  - `type` (string, opsional): Tipe produk (`wireless` / `analog`).
+  - `featured` (boolean, opsional): Filter produk unggulan (`true` / `false`).
+  - `min_price` (numeric, opsional): Filter harga minimum.
+  - `max_price` (numeric, opsional): Filter harga maksimum.
+  - `sort` (string, opsional): Urutan (`latest`, `price_asc`, `price_desc`, `name_asc`).
+  - `per_page` (integer, opsional): Jumlah item per halaman (1–48, default: 12).
+- **Response Contoh (200 OK):**
+```json
+{
+  "current_page": 1,
+  "data": [
+    {
+      "id": 1,
+      "brand_id": 1,
+      "name": "EZVIZ H6c 3MP Smart Wi-Fi Camera",
+      "slug": "ezviz-h6c-3mp",
+      "product_type": "wireless",
+      "starting_price": 458000,
+      "average_rating": 4.8,
+      "review_count": 15,
+      "brand": { "id": 1, "name": "EZVIZ", "slug": "ezviz" },
+      "images": [{ "id": 1, "path": "products/ezviz-h6c.jpg", "is_primary": true }]
+    }
+  ],
+  "total": 24
+}
+```
+
+---
+
+#### 1.3 Detail Produk
+Mengambil data detail produk berdasarkan slug, termasuk opsi varian (unit / paket pemasangan / jumlah kamera 1-16 unit), galeri foto, fitur unggulan, dan ulasan.
+
+- **Endpoint:** `GET /storefront/products/{slug}`
+- **Response Contoh (200 OK):**
+```json
+{
+  "data": {
+    "id": 1,
+    "name": "EZVIZ H6c 3MP Smart Wi-Fi Camera",
+    "slug": "ezviz-h6c-3mp",
+    "product_type": "wireless",
+    "description": "Kamera CCTV Wi-Fi Smart Home 3MP dengan rotasi 360 derajat dan Auto Tracking.",
+    "specifications": {
+      "resolution": "3MP (2K)",
+      "night_vision": "10 Meters",
+      "storage": "MicroSD slot up to 256GB"
+    },
+    "average_rating": 4.8,
+    "review_count": 15,
+    "brand": { "id": 1, "name": "EZVIZ", "slug": "ezviz" },
+    "images": [
+      { "id": 1, "path": "products/ezviz-h6c-1.jpg", "is_primary": true }
+    ],
+    "features": [
+      { "id": 1, "title": "Smart Tracking", "description": "Melacak pergerakan otomatis" }
+    ],
+    "variants": [
+      {
+        "id": 10,
+        "sku": "EZV-H6C-UNIT",
+        "name": "Unit Saja",
+        "variant_type": "unit",
+        "price": "458000.00",
+        "installation_included": false
+      },
+      {
+        "id": 11,
+        "sku": "EZV-H6C-PKT",
+        "name": "Paket Pemasangan",
+        "variant_type": "installation_package",
+        "price": "650000.00",
+        "installation_included": true
+      }
+    ]
+  }
+}
+```
+
+---
+
+#### 1.4 Daftar Kategori Katalog
+- **Endpoint:** `GET /storefront/categories`
+- **Response Contoh (200 OK):**
+```json
+{
+  "data": [
+    { "id": 1, "name": "Wireless", "slug": "wireless", "image_path": "categories/wireless.jpg" },
+    { "id": 2, "name": "Analog", "slug": "analog", "image_path": "categories/analog.jpg" }
+  ]
+}
+```
+
+---
+
+#### 1.5 Daftar Brand Partner
+- **Endpoint:** `GET /storefront/brands`
+- **Response Contoh (200 OK):**
+```json
+{
+  "data": [
+    { "id": 1, "name": "EZVIZ", "slug": "ezviz", "logo_path": "brands/ezviz.png" },
+    { "id": 2, "name": "IMOU", "slug": "imou", "logo_path": "brands/imou.png" },
+    { "id": 3, "name": "Dahua", "slug": "dahua", "logo_path": "brands/dahua.png" },
+    { "id": 4, "name": "Hikvision", "slug": "hikvision", "logo_path": "brands/hikvision.png" },
+    { "id": 5, "name": "HiLook", "slug": "hilook", "logo_path": "brands/hilook.png" }
+  ]
+}
+```
+
+---
+
+#### 1.6 Halaman Statis: Profil Perusahaan
+- **Endpoint:** `GET /storefront/company-profile`
+- **Response Contoh (200 OK):**
+```json
+{
+  "data": {
+    "company_name": "Hablun CCTV",
+    "about": "Penyedia solusi keamanan CCTV terpercaya...",
+    "vision": "Menjadi mitra keamanan nomor satu...",
+    "mission": "Memberikan pelayanan instalasi terbaik...",
+    "statistics": { "completed_projects": 1500, "active_clients": 1200 },
+    "contacts": { "phone": "081234567890", "address": "Jl. Raya Utama No. 12" }
+  }
+}
+```
+
+---
+
+#### 1.7 Halaman Statis: Layanan / Servis
+- **Endpoint:** `GET /storefront/services`
+- **Response Contoh (200 OK):**
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "name": "Jasa Instalasi CCTV",
+      "slug": "jasa-instalasi-cctv",
+      "description": "Pemasangan cepat dan rapi oleh teknisi berpengalaman.",
+      "service_level": "Maksimal 24 jam",
+      "whatsapp_url": "https://wa.me/6281234567890?text=Halo%20Admin"
+    }
+  ]
+}
+```
+
+---
+
+### 2. Autentikasi Nomor HP & OTP WhatsApp
+
+#### 2.1 Minta Kode OTP (Send OTP)
+Mengirimkan kode OTP 4-6 digit via WhatsApp Gateway.
+
+- **Endpoint:** `POST /storefront/otp/send`
+- **Request Body:**
+```json
+{
+  "phone": "081234567890",
+  "purpose": "guest_checkout"
+}
+```
+*Catatan Purpose:* `guest_checkout`, `customer_login`, `customer_register`.
+
+- **Response Contoh (200 OK):**
+```json
+{
+  "message": "Kode OTP berhasil dikirim via WhatsApp.",
+  "data": {
+    "verification_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+    "phone": "+6281234567890",
+    "expires_at": "2026-08-07T16:00:00.000000Z"
+  }
+}
+```
+
+---
+
+#### 2.2 Verifikasi Kode OTP
+- **Endpoint:** `POST /storefront/otp/verify`
+- **Request Body:**
+```json
+{
+  "verification_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+  "code": "123456",
+  "purpose": "guest_checkout"
+}
+```
+
+- **Response Contoh (200 OK):**
+```json
+{
+  "message": "Nomor WhatsApp berhasil diverifikasi.",
+  "data": {
+    "verification_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+    "phone": "+6281234567890",
+    "verified_at": "2026-08-07T15:45:00.000000Z"
+  }
+}
+```
+
+---
+
+#### 2.3 Login / Register via OTP (Pelanggan)
+Mendaftarkan akun baru atau login menggunakan `verification_id` yang sudah terverifikasi OTP.
+*Secara otomatis menautkan (auto-link) seluruh riwayat pesanan Guest sebelumnya dengan nomor WhatsApp tersebut.*
+
+- **Endpoint:** `POST /storefront/auth/login-otp`
+- **Request Body:**
+```json
+{
+  "verification_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+  "name": "Budi Santoso",
+  "password": "Password123"
+}
+```
+
+- **Response Contoh (200 OK):**
+```json
+{
+  "message": "Autentikasi berhasil.",
+  "data": {
+    "user": {
+      "id": 5,
+      "name": "Budi Santoso",
+      "phone_e164": "+6281234567890",
+      "phone_verified_at": "2026-08-07T15:45:00.000000Z",
+      "role": "customer"
+    },
+    "token": "1|sanctum_token_string_here"
+  }
+}
+```
+
+---
+
+### 3. Keranjang Belanja (Cart)
+
+#### 3.1 Lihat Keranjang Belanja
+- **Endpoint:** `GET /storefront/cart`
+- **Query Parameters:** `guest_token` (opsional untuk guest).
+- **Headers:** `Authorization: Bearer <token>` (jika login).
+- **Response Contoh (200 OK):**
+```json
+{
+  "data": {
+    "id": 1,
+    "public_id": "c8a1b2c3-d4e5-4f6a-8b9c-0d1e2f3a4b5c",
+    "guest_token": "guest_abc123",
+    "items": [
+      {
+        "id": 10,
+        "product_variant_id": 11,
+        "quantity": 1,
+        "variant": {
+          "id": 11,
+          "name": "Paket Pemasangan",
+          "price": "650000.00",
+          "product": { "name": "EZVIZ H6c 3MP" }
+        }
+      }
+    ]
+  }
+}
+```
+
+---
+
+#### 3.2 Tambah Produk ke Keranjang
+- **Endpoint:** `POST /storefront/cart/items`
+- **Request Body:**
+```json
+{
+  "product_variant_id": 11,
+  "quantity": 1,
+  "guest_token": "guest_abc123"
+}
+```
+- **Response Contoh (200 OK):** Menampilkan data keranjang yang diperbarui.
+
+---
+
+#### 3.3 Update Jumlah Item di Keranjang
+- **Endpoint:** `PUT /storefront/cart/items/{id}`
+- **Request Body:**
+```json
+{
+  "quantity": 2,
+  "guest_token": "guest_abc123"
+}
+```
+
+---
+
+#### 3.4 Hapus Item dari Keranjang
+- **Endpoint:** `DELETE /storefront/cart/items/{id}`
+- **Query Parameters:** `guest_token=guest_abc123`
+
+---
+
+### 4. Checkout & Lacak Pesanan (Tracking)
+
+#### 4.1 Proses Checkout Pesanan
+
+##### **Aturan Bisnis Checkout:**
+1. **Aturan Guest Checkout:**
+   - Wajib melampirkan `verification_id` dari WhatsApp OTP (`purpose: guest_checkout`).
+   - `payment_method` **diunci khusus `qris`**.
+2. **Aturan User Logged-In:**
+   - Bebas memilih `payment_method`: `qris`, `bank_transfer`, `gopay`, `ovo`, `shopeepay`.
+   - Tidak memerlukan verifikasi OTP ulang.
+3. **Kalkulasi Harga:**
+   - PPN 0% (`tax_amount: 0`).
+   - Tanpa double charge instalasi (biaya jasa terikat pada varian).
+
+- **Endpoint:** `POST /storefront/checkout`
+- **Headers:** `Authorization: Bearer <token>` (Opsional untuk Guest, Wajib untuk User Login).
+- **Request Body (Guest Checkout):**
+```json
+{
+  "customer_name": "Budi Guest",
+  "phone": "081234567890",
+  "verification_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+  "installation_address": "Jl. Merdeka No. 45, Jakarta Selatan",
+  "installation_city": "Jakarta Selatan",
+  "installation_date": "2026-08-10",
+  "installation_time_slot": "09:00 - 11:00",
+  "payment_method": "qris",
+  "items": [
+    {
+      "product_variant_id": 11,
+      "quantity": 1
+    }
+  ]
+}
+```
+
+- **Request Body (User Logged-In Checkout):**
+```json
+{
+  "customer_name": "Budi Santoso",
+  "installation_address": "Jl. Merdeka No. 45, Jakarta Selatan",
+  "installation_city": "Jakarta Selatan",
+  "installation_date": "2026-08-10",
+  "installation_time_slot": "13:00 - 15:00",
+  "payment_method": "bank_transfer",
+  "items": [
+    {
+      "product_variant_id": 11,
+      "quantity": 1
+    }
+  ]
+}
+```
+
+- **Response Contoh (201 Created):**
+```json
+{
+  "message": "Pesanan berhasil dibuat.",
+  "data": {
+    "id": 101,
+    "unique_order_code": "HBL-2026-0001",
+    "customer_name": "Budi Guest",
+    "installation_address": "Jl. Merdeka No. 45, Jakarta Selatan",
+    "installation_date": "2026-08-10",
+    "installation_time_slot": "09:00 - 11:00",
+    "status": "awaiting_payment",
+    "payment_status": "pending",
+    "payment_method": "qris",
+    "subtotal": "650000.00",
+    "tax_amount": "0.00",
+    "grand_total": "650000.00",
+    "payments": [
+      {
+        "gateway": "dummy_qris",
+        "payment_url": "https://qris.habluncctv.com/pay/HBL-2026-0001",
+        "qris_payload": "00020101021226670016ID.CO.QRIS.WWW...",
+        "expires_at": "2026-08-07T16:45:00.000000Z"
+      }
+    ],
+    "items": [
+      {
+        "product_name": "EZVIZ H6c 3MP Smart Wi-Fi Camera",
+        "variant_name": "Paket Pemasangan",
+        "quantity": 1,
+        "unit_price": "650000.00",
+        "line_total": "650000.00",
+        "installation_included": true
+      }
+    ]
+  }
+}
+```
+
+---
+
+#### 4.2 Lacak Pesanan (Public Tracking Guest & User)
+Melihat status pesanan publik menggunakan `unique_order_code` (tanpa perlu login).
+
+- **Endpoint:** `GET /storefront/orders/track/{code}`
+- **Contoh URL:** `/api/storefront/orders/track/HBL-2026-0001`
+- **Response Contoh (200 OK):**
+```json
+{
+  "data": {
+    "unique_order_code": "HBL-2026-0001",
+    "customer_name": "Budi Guest",
+    "status": "awaiting_payment",
+    "payment_status": "pending",
+    "grand_total": "650000.00",
+    "status_histories": [
+      {
+        "status": "awaiting_payment",
+        "title": "Menunggu pembayaran",
+        "note": "Pesanan dibuat dan stok telah direservasi.",
+        "occurred_at": "2026-08-07T15:45:00.000000Z"
+      }
+    ],
+    "technician": null
+  }
+}
+```
+
+---
+
+### 5. Area Pelanggan Terdaftar (Customer Authenticated)
+
+#### 5.1 Detail Profil Saya
+- **Endpoint:** `GET /storefront/auth/me`
+- **Headers:** `Authorization: Bearer <token>`
+- **Response Contoh (200 OK):**
+```json
+{
+  "data": {
+    "id": 5,
+    "name": "Budi Santoso",
+    "phone_e164": "+6281234567890",
+    "email": "budi@example.com",
+    "addresses": [
+      {
+        "id": 1,
+        "label": "Alamat utama",
+        "recipient_name": "Budi Santoso",
+        "phone_e164": "+6281234567890",
+        "address_line": "Jl. Merdeka No. 45",
+        "city": "Jakarta Selatan",
+        "is_default": true
+      }
+    ]
+  }
+}
+```
+
+---
+
+#### 5.2 Update Profil
+- **Endpoint:** `PUT /storefront/auth/profile`
+- **Headers:** `Authorization: Bearer <token>`
+- **Request Body:**
+```json
+{
+  "name": "Budi Santoso",
+  "email": "budi.santoso@example.com"
+}
+```
+
+---
+
+#### 5.3 Ubah Kata Sandi
+- **Endpoint:** `PUT /storefront/auth/change-password`
+- **Headers:** `Authorization: Bearer <token>`
+- **Request Body:**
+```json
+{
+  "current_password": "Password123",
+  "new_password": "NewPassword456"
+}
+```
+
+---
+
+#### 5.4 Daftar Pesanan Saya (Order History)
+- **Endpoint:** `GET /storefront/orders`
+- **Headers:** `Authorization: Bearer <token>`
+- **Query Parameters:** `status` (opsional: `active`, `completed`, `cancelled`).
+- **Response Contoh (200 OK):** Daftar paginated pesanan milik pengguna terdaftar.
+
+---
+
+#### 5.5 Detail Pesanan Saya
+- **Endpoint:** `GET /storefront/orders/{id}`
+- **Headers:** `Authorization: Bearer <token>`
+
+---
+
+#### 5.6 Batalkan Pesanan
+- **Endpoint:** `POST /storefront/orders/{id}/cancel`
+- **Headers:** `Authorization: Bearer <token>`
+- **Request Body:**
+```json
+{
+  "note": "Perubahan rencana pemasangan"
+}
+```
+
+---
+
+#### 5.7 Logout Customer
+- **Endpoint:** `POST /storefront/auth/logout`
+- **Headers:** `Authorization: Bearer <token>`
+
+---
+
+## 🛠️ PART 2: Internal Inventory Management API (Admin)
+
+### 1. Admin Authentication
+
+#### 1.1 Login Admin
+- **Endpoint:** `POST /auth/login`
+- **Request Body:**
+```json
+{
+  "email": "admin@inventory.test",
+  "password": "password"
+}
+```
+- **Response Contoh (200 OK):**
+```json
+{
+  "access_token": "2|sanctum_token_string",
+  "token_type": "Bearer"
+}
+```
+
+---
+
+#### 1.2 Logout Admin
+- **Endpoint:** `POST /auth/logout`
+- **Headers:** `Authorization: Bearer <token>`
+
+---
+
+### 2. Master Data Management (CRUD)
+
+#### 2.1 Categories Management
+- `GET /categories` — List Kategori Barang Internal
+- `POST /categories` — Tambah Kategori
+- `GET /categories/{id}` — Detail Kategori
+- `PUT /categories/{id}` — Update Kategori
+- `DELETE /categories/{id}` — Hapus Kategori
+
+#### 2.2 Suppliers / Brands Management
+- `GET /suppliers` — List Supplier / Brand Internal
+- `POST /suppliers` — Tambah Supplier
+- `GET /suppliers/{id}` — Detail Supplier
+- `PUT /suppliers/{id}` — Update Supplier
+- `DELETE /suppliers/{id}` — Hapus Supplier
+
+#### 2.3 Items Management (Stok Master)
+- `GET /items` — List Barang Inventory
+- `POST /items` — Tambah Barang Baru
+- `GET /items/{id}` — Detail Barang
+- `PUT /items/{id}` — Update Barang
+- `DELETE /items/{id}` — Hapus Barang
+
+---
+
+### 3. Stock & Pergerakan Inventory
+
+#### 3.1 Transaksi Stok Masuk (Stock In)
+- **Endpoint:** `POST /stock-in`
+- **Headers:** `Authorization: Bearer <token>`
+- **Request Body:**
+```json
+{
+  "item_id": 1,
+  "quantity": 10,
+  "movement_date": "2026-08-07",
+  "reference": "PO-2026-001",
+  "note": "Penerimaan barang dari supplier EZVIZ"
+}
+```
+
+---
+
+#### 3.2 Transaksi Stok Keluar (Stock Out)
+- **Endpoint:** `POST /stock-out`
+- **Headers:** `Authorization: Bearer <token>`
+- **Request Body:**
+```json
+{
+  "item_id": 1,
+  "quantity": 2,
+  "movement_date": "2026-08-07",
+  "reference": "SO-2026-088",
+  "note": "Penjualan offline toko"
+}
+```
+
+---
+
+#### 3.3 Histori Pergerakan Stok
+- **Endpoint:** `GET /stock-movements`
+- **Headers:** `Authorization: Bearer <token>`
+
+---
+
+#### 3.4 Dashboard Summary Inventory
+- **Endpoint:** `GET /dashboard`
+- **Headers:** `Authorization: Bearer <token>`
+- **Response Contoh (200 OK):**
+```json
+{
+  "total_items": 150,
+  "total_categories": 5,
+  "total_suppliers": 5,
+  "low_stock_items": 3
+}
+```
+
+---
+
+#### 3.5 Upload Gambar Produk Catalog
+- **Endpoint:** `POST /products/{product}/images`
+- **Headers:** `Authorization: Bearer <token>`
+- **Content-Type:** `multipart/form-data`
+- **Body:** `image` (file), `is_primary` (boolean).
+
+---
+
+### 4. Import Excel Data
+
+- `POST /import/supplier` — Import data supplier/brand dari Excel.
+- `POST /import/item` — Import master barang dari `STOK BARANG.xlsx`.
+- `POST /import/price` — Import pricelist dari `PRICELIST.xlsx`.

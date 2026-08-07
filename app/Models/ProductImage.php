@@ -26,4 +26,14 @@ class ProductImage extends Model
     {
         return $this->belongsTo(Product::class);
     }
+
+    public function images()
+    {
+        return $this->hasMany(ProductImage::class);
+    }
+
+    public function getImageUrlAttribute()
+    {
+        return asset('storage/' . $this->path);
+    }
 }

@@ -15,13 +15,12 @@ use App\Http\Controllers\Api\Storefront\OrderController;
 use App\Http\Controllers\Api\Storefront\OtpController;
 use App\Http\Controllers\Api\Storefront\PageController;
 use App\Http\Controllers\Api\SupplierController;
+use App\Http\Controllers\Api\ProductImageController;
 use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| Internal Inventory Management API (Admin / Staff)
-|--------------------------------------------------------------------------
-*/
+
+// Internal Inventory Management API (Admin)
+
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
 
@@ -39,18 +38,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('stock-out', [StockController::class, 'stockOut']);
     Route::apiResource('stock-movements', StockMovementController::class)->only(['index', 'show']);
     Route::get('dashboard', [DashboardController::class, 'index']);
+    Route::post('/products/{product}/images', [ProductImageController::class, 'store']);
 });
 
+// Import Excel
 Route::post('/import/supplier', [ImportController::class, 'supplier']);
 Route::post('/import/item', [ImportController::class, 'item']);
 Route::post('/import/price', [ImportController::class, 'itemPrice']);
-Route::post('/import/serial-number', [ImportController::class, 'serialNumber']);
+// Route::post('/import/serial-number', [ImportController::class, 'serialNumber']);
 
-/*
-|--------------------------------------------------------------------------
-| E-Commerce Storefront API (Hablun CCTV Customer App)
-|--------------------------------------------------------------------------
-*/
+
+// E-Commerce Storefront API (Hablun CCTV Customer App)
+
 Route::prefix('storefront')->group(function () {
     // Public Catalog & Content
     Route::get('/home', [CatalogController::class, 'home']);

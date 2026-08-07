@@ -14,6 +14,7 @@ class UserSeeder extends Seeder
             'name' => 'Administrator',
             'email' => 'admin@inventory.test',
             'password' => Hash::make('password'),
+            'role' => 'admin',
         ]);
     }
 }

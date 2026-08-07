@@ -1,120 +1,130 @@
-# Kebutuhan Data Backend — Website E-Commerce Hablun CCTV (Update Alur Guest Checkout & OTP WhatsApp)
-
-Disusun berdasarkan: *Laporan Progress Desain UI/UX (3 Agustus 2026)* & *Penyesuaian Alur Kerja Baru (Guest Checkout & OTP WA)*
-
----
-
-## 💡 Ringkasan Alur Kerja & Skema Pembelian Baru
-
-Website Hablun CCTV mendukung 2 jalur pembelian:
-
-1. **Jalur Tanpa Login (Guest Checkout via OTP WA):**
-   - User dapat langsung memilih produk & paket tanpa perlu login terlebih dahulu.
-   - Pembayaran **khusus Guest hanya diizinkan menggunakan QRIS**.
-   - Sebelum QRIS diterbitkan / pesanan dikonfirmasi, sistem wajib mengirimkan **kode OTP via WhatsApp** ke nomor HP user untuk verifikasi.
-   - **Metode Lacak Pesanan (Tracking):**
-     - **Opsi 1 (Otomatis/Sistem):** User melakukan Login/Daftar dengan Nomor HP yang sama. Sistem secara otomatis menautkan (*auto-link*) seluruh riwayat transaksi guest sebelumnya ke akun user tersebut.
-     - **Opsi 2 (Manual via WhatsApp Admin):** User menyimpan **Kode Pesanan Unik** (`unique_order_code`) yang diterbitkan tiap transaksi untuk dikonfirmasikan/ditanyakan ke Admin via WA.
-
-2. **Jalur Dengan Login (User Terdaftar):**
-   - User login menggunakan Nomor HP.
-   - Saat checkout, **tidak perlu lagi verifikasi OTP** (karena nomor HP sudah terverifikasi saat akun dibuat).
-   - Memiliki akses metode pembayaran yang lebih fleksibel (QRIS, Transfer Bank, E-Wallet).
+# Back-End Technical & API Specification Document
+**Project:** Hablun CCTV System — Core API & Database Architecture  
+**Version:** 3.0.0  
+**Target Stack:** Node.js / Laravel / Go (Compatible RESTful API Architecture)  
+**Frontend Specs Binding:** User Specification v3.0.0 & Admin Specification v3.0.0  
 
 ---
 
-## 1. Halaman Utama (Homepage)
-**Tabel terkait:** `products`, `categories`, `banners`, `brands`
-- **Navbar Menu Utama:** Beranda, Katalog, Servis, Tentang Kami.
-- **Data Hero/Banner:** Judul, deskripsi, gambar promo, tombol CTA.
-- **Kategori Navigasi Cepat:** Wireless, Analog, Grosir.
-- **Produk Pilihan / Unggulan:** Highlight produk dengan flag `is_featured`.
-- **Logo Brand Partner:** EZVIZ, IMOU, Dahua, Hikvision, HiLook.
-- **Personalisasi Tampilan:** Menampilkan nama/avatar jika user login, atau tombol "Login / Masuk" jika belum.
+## 1. System Architecture & Tech Requirements
 
-## 2. Katalog Produk
-**Tabel terkait:** `products`, `categories`, `brands`
-- **Daftar Produk dari 5 Brand Utama:** EZVIZ, IMOU, Dahua, Hikvision, HiLook.
-- **Filter & Sorting:** Berdasarkan Kategori (Wireless / Analog / Grosir), Brand, dan Harga.
-- **Card Produk:** Gambar thumbnail, nama produk, brand, harga dasar/mulai dari, rating rata-rata, status stok, dan tombol "Lihat Detail".
+* **API Protocol:** RESTful API with JSON Payload & Standard HTTP Response Codes.
+* **Authentication:** 
+  * User Side: OAuth 2.0 (Google/Facebook) + WhatsApp OTP JWT-based Auth.
+  * Admin Side: JWT / Sanctum Bearer Token Authentication + RBAC Middleware.
+* **Database Engine:** MySQL / PostgreSQL (Relational Database).
+* **Caching & Queue:** Redis (Used for Rate Limiting OTP, Session Caching, and Notification Queues).
+* **External Third-Party Integrations:**
+  * **WhatsApp Gateway API:** Fonnte / Wablas / Twilio (For OTP and Notification Dispatch).
+  * **Payment Gateway API:** Midtrans / Xendit (For Dynamic QRIS Generation & Webhook handling).
 
-## 3. Detail Produk — Wireless
-**Tabel terkait:** `products`, `product_options`, `product_images`, `product_features`, `reviews`
-- **Data Produk:** Nama, brand, rating, deskripsi lengkap, spesifikasi teknis, list fitur unggulan.
-- **Pilihan Varian Paket:**
-  - **Unit saja** (hanya perangkat CCTV).
-  - **Paket Pemasangan** (termasuk unit + jasa instalasi).
-- **Galeri Gambar:** Multiple images per produk.
-- **Tombol Utama:** "Beli Sekarang" (mengarahkan langsung ke Checkout).
+---
 
-## 4. Detail Produk — Analog (Kabel)
-**Tabel terkait:** `products`, `product_camera_options`, `product_images`, `reviews`
-- **Selector Jumlah Kamera (1–16 Unit):** Pilihan paket kamera analog dengan kalkulasi harga dinamis.
-- **Spesifikasi Detail per Konfigurasi:**
-  - Jumlah & tipe kamera (indoor/outdoor, resolusi, ColorVu/Night vision).
-  - Jenis DVR & jumlah channel.
-  - Kapasitas Hardisk (HDD).
-  - Power supply, jenis & panjang kabel, konektor.
-  - Status jasa instalasi (termasuk/tidak) & masa garansi.
+## 2. Entity Relationship Diagram (ERD) & Database Schema
 
-## 5. Keranjang Belanja & Checkout (Penggabungan Alur Praktis)
-**Tabel terkait:** `orders`, `order_items`, `phone_verifications`, `payments`
+### A. Core Tables Overview
 
-### A. Form Data Pembeli & Pemasangan:
-- **Nama Lengkap & Alamat Pemasangan:** Lokasi detail untuk teknisi.
-- **Nomor WhatsApp Pembeli:** Identitas utama transaksi.
-- **Penjadwalan Instalasi:** Pilihan tanggal & slot waktu kedatangan teknisi (misal: "09:00–11:00").
+#### 1. `users`
+* `id` (PK, BigInt, Auto)
+* `name` (VarChar 255)
+* `phone` (VarChar 20, Unique, Indexed)
+* `email` (VarChar 255, Nullable)
+* `password` (VarChar 255, Nullable)
+* `role` (Enum: 'customer', 'super_admin', 'warehouse_admin', 'cs_admin')
+* `phone_verified_at` (Timestamp, Nullable)
+* `created_at`, `updated_at` (Timestamp)
 
-### B. Kondisi Pembayaran & Verifikasi OTP:
-- **Jika Pembeli Belum Login (Guest):**
-  1. Metode Pembayaran **diunci khusus QRIS**.
-  2. Sistem menembak API WhatsApp Gateway untuk mengirimkan **Kode OTP (4-6 digit)** ke nomor WhatsApp pembeli.
-  3. Pembeli memasukkan kode OTP di modal/pop-up verifikasi.
-  4. Setelah OTP valid, sistem menerbitkan **Dynamic QRIS** untuk discan.
-- **Jika Pembeli Sudah Login:**
-  1. Pembeli bebas memilih metode pembayaran: QRIS, Transfer Bank (BCA/Mandiri), E-Wallet (GoPay/OVO/ShopeePay).
-  2. **Tanpa Verifikasi OTP ulang** (langsung lanjut ke pembayaran).
+#### 2. `products`
+* `id` (PK, BigInt, Auto)
+* `sku` (VarChar 100, Unique)
+* `brand_id` (FK -> `brands.id`)
+* `name` (VarChar 255)
+* `slug` (VarChar 255, Unique)
+* `description` (Text)
+* `technical_specs` (JSON)
+* `price_unit_only` (Decimal 12,2)
+* `price_package_installation` (Decimal 12,2)
+* `stock` (Int, Unsigned, Default: 0)
+* `stock_threshold_alert` (Int, Unsigned, Default: 3)
+* `is_active` (Boolean, Default: true)
+* `created_at`, `updated_at` (Timestamp)
 
-### C. Aturan Kalkulasi Harga (Aturan Bisnis Backend):
-- ⚠️ **Tanpa Pajak (PPN 0%):** Backend **dilarang** menambahkan PPN 11% otomatis.
-- ⚠️ **Tanpa Double Charge Instalasi:** Jika produk yang dipilih ber-varian "Paket Pemasangan", sistem dilarang menambah biaya "Jasa Pasang" terpisah.
+#### 3. `orders`
+* `id` (PK, BigInt, Auto)
+* `order_number` (VarChar 50, Unique, e.g., "HBL-20260807-001")
+* `user_id` (FK -> `users.id`)
+* `purchase_type` (Enum: 'unit_only', 'package_installation')
+* `schedule_type` (Enum: 'none', 'automatic', 'manual', Default: 'none')
+* `shipping_address` (Text)
+* `courier_name` (VarChar 50, Nullable)
+* `tracking_number` (VarChar 100, Nullable)
+* `subtotal` (Decimal 12,2)
+* `installation_fee` (Decimal 12,2, Default: 0.00)
+* `discount_amount` (Decimal 12,2, Default: 0.00)
+* `grand_total` (Decimal 12,2)
+* `order_status` (Enum: 'pending_payment', 'paid_processing', 'shipped', 'scheduled', 'installation_in_progress', 'completed', 'cancelled')
+* `payment_status` (Enum: 'unpaid', 'paid', 'expired', 'failed')
+* `created_at`, `updated_at` (Timestamp)
 
-## 6. Konfirmasi Pesanan & Bukti Pembayaran
-**Tabel terkait:** `orders`, `payments`, `order_status_history`
-- **Nomor Pesanan / Kode Unik Pembayaran:** Format `HBL-2026-XXXX` (dibuat unik untuk tiap transaksi).
-- **Rincian Pesanan:** Daftar barang, paket, lokasi instalasi, jadwal teknisi, dan status pembayaran (Pending / Paid).
-- **Opsi Tracking untuk Guest:**
-  - **Petunjuk Lacak via WA:** Tombol "Chat Admin via WA" yang otomatis menyertakan Kode Unik Pesanan.
-  - **Petunjuk Lacak via Akun:** Anjuran untuk Login/Daftar menggunakan nomor WhatsApp yang sama agar transaksi muncul di Dashboard User.
-- **Generate Invoice:** Unduh bukti transaksi format PDF.
+#### 4. `installation_schedules`
+* `id` (PK, BigInt, Auto)
+* `order_id` (FK -> `orders.id`, Unique)
+* `technician_team_id` (FK -> `technicians.id`, Nullable)
+* `scheduled_date` (Date, Nullable)
+* `scheduled_time_slot` (VarChar 50, Nullable, e.g., "10:00 - 12:00")
+* `schedule_status` (Enum: 'unscheduled', 'scheduled', 'on_site', 'completed')
+* `notes` (Text, Nullable)
+* `created_at`, `updated_at` (Timestamp)
 
-## 7. Login & Registrasi (Sistem Autentikasi No. HP)
-**Tabel terkait:** `users`, `orders`
-- **Identitas Utama:** Nomor WhatsApp / Handphone (bukan email).
-- **Sistem OTP saat Registrasi/Login Baru:** Verifikasi kepemilikan nomor HP.
-- **Fitur Auto-Link Guest Orders:**
-  Saat user berhasil Login / Mendaftar, backend secara otomatis melakukan *query*:
-  `UPDATE orders SET user_id = :new_user_id WHERE guest_phone_number = :phone_number AND user_id IS NULL;`
-  Hal ini memastikan seluruh riwayat pembelian *Guest* sebelumnya langsung muncul di halaman "Pesanan Saya".
+#### 5. `qris_payments`
+* `id` (PK, BigInt, Auto)
+* `order_id` (FK -> `orders.id`)
+* `transaction_id` (VarChar 100, Unique, Midtrans/Xendit Ref)
+* `qr_string` (Text)
+* `qr_image_url` (Text)
+* `amount` (Decimal 12,2)
+* `expired_at` (Timestamp)
+* `paid_at` (Timestamp, Nullable)
 
-## 8. Pesanan Saya & Detail Pesanan (Khusus User Login)
-**Tabel terkait:** `orders`, `order_status_history`, `technicians`
-- **Filter Status Pesanan:** Semua / Berlangsung / Selesai / Dibatalkan.
-- **Timeline Progress Status Pemasangan:**
-  `Pesanan Diterima` ➔ `Penjadwalan Teknisi` ➔ `Teknisi Dalam Perjalanan` ➔ `Proses Pemasangan` ➔ `Selesai`.
-- **Informasi Teknisi:** Menampilkan nama, foto, dan kontak WhatsApp teknisi bertugas.
-- **Aksi User:** Tombol "Batalkan Pesanan" (jika belum diproses) & "Chat Teknisi / Admin".
+---
 
-## 9. Profil Saya & Ubah Kata Sandi
-**Tabel terkait:** `users`
-- Pengelolaan foto profil, nama lengkap, nomor WhatsApp utama, email (opsional), dan alamat simpanan.
-- Ubah Kata Sandi (Verifikasi kata sandi lama, kata sandi baru min. 8 karakter kombinasi huruf & angka).
+## 3. Business Logic & Conditional Workflows
 
-## 10. Halaman Statis: Tentang Kami & Servis
-**Tabel terkait:** `company_profile`, `services`
-- **Tentang Kami:** Profil Hablun CCTV, statistik proyek selesai, komitmen garansi resmi, visi & misi.
-- **Servis:** Layanan Maintenance/Pemeliharaan, Troubleshooting, Konsultasi Sistem CCTV, Enterprise Solution, SLA layanan (maks. 24 jam), serta tombol Konsultasi WA Direct.
+### A. Stock Deduction & Threshold Trigger
+1. **Deduction:** Saat transaksi QRIS dikonfirmasi `PAID` via Payment Gateway Webhook, kurangi stok pada tabel `products` secara atomik:
+   `UPDATE products SET stock = stock - qty WHERE id = product_id AND stock >= qty;`
+2. **Zero Stock Handler:** Jika `stock == 0`, secara otomatis ubah `is_active = false` atau return status `OUT_OF_STOCK` pada endpoint katalog.
+3. **Low Stock Alert:** Jika `stock <= stock_threshold_alert`, kirimkan event notifikasi/web-socket ke Admin Dashboard Header.
 
-## 🛑 Belum Bisa Dikerjakan (Menunggu Desain Dashboard Admin)
-- **Dashboard Admin:** Stok serial number per unit, manajemen status pesanan, penugasan teknisi, laporan penjualan.
-- **Dashboard Super Admin:** Keuangan, log aktivitas, dan kontrol hak akses admin.
+### B. Conditional Checkout Logic
+* **If `purchase_type == 'unit_only'`:**
+  * Validasi wajib: `shipping_address`, `courier_name`.
+  * Set `schedule_type = 'none'`.
+  * Set `installation_fee = 0`.
+  * Create `orders` record $\rightarrow$ Generate QRIS.
+* **If `purchase_type == 'package_installation'`:**
+  * Validasi wajib: `shipping_address`, `schedule_type` ('automatic' OR 'manual').
+  * Set `installation_fee` sesuai harga selisih paket.
+  * **If `schedule_type == 'automatic'`:**
+    * Sistem otomatis mengkalkulasi `scheduled_date` = `CURRENT_DATE + 2 days` (skip hari libur jika ada logic bisnis).
+    * Insert record ke `installation_schedules` dengan `schedule_status = 'scheduled'`.
+  * **If `schedule_type == 'manual'`:**
+    * Insert record ke `installation_schedules` dengan `schedule_status = 'unscheduled'`, `scheduled_date = NULL`.
+
+### C. WhatsApp OTP Flow
+1. **Request OTP:** User input nomor HP $\rightarrow$ Server generate 6 digit random numeric code $\rightarrow$ Simpan di Redis dengan TTL 300 detik $\rightarrow$ Dispatch via WA Gateway API.
+2. **Rate Limit:** Maksimal 3x request OTP per nomor HP dalam kurun waktu 10 menit.
+3. **Verify OTP:** Match input code dengan value di Redis. Jika match $\rightarrow$ Delete key Redis $\rightarrow$ Set `phone_verified_at` di DB $\rightarrow$ Return JWT Auth Token.
+
+---
+
+## 4. API Endpoints Specification
+
+### A. Authentication & OTP (`/api/v1/auth`)
+
+#### `POST /auth/whatsapp/send-otp`
+* **Request Body:**
+  ```json
+  {
+    "phone": "081234567890"
+  }
