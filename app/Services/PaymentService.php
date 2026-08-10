@@ -98,6 +98,36 @@ class PaymentService
         });
     }
 
+    public function markFailed(string $gateway, array $payload): Payment
+    {
+        return DB::transaction(function () use ($gateway, $payload): Payment {
+            $reference = (string) ($payload['provider_reference'] ?? '');
+
+            if ($reference === '') {
+                throw ValidationException::withMessages([
+                    'payload' => ['provider_reference wajib ada.'],
+                ]);
+            }
+
+            $payment = Payment::query()
+                ->where('gateway', $gateway)
+                ->where('provider_reference', $reference)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($payment->status === 'paid') {
+                return $payment; // Do not override confirmed paid payment
+            }
+
+            $payment->update([
+                'status' => 'failed',
+                'raw_payload' => $payload,
+            ]);
+
+            return $payment->fresh();
+        });
+    }
+
     public function releaseExpired(): int
     {
         $orders = Order::query()

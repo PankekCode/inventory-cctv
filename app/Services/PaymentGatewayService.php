@@ -6,7 +6,9 @@ use App\Models\Order;
 use Illuminate\Support\Str;
 use RuntimeException;
 
-class PaymentGatewayService
+use App\Contracts\PaymentGatewayInterface;
+
+class PaymentGatewayService implements PaymentGatewayInterface
 {
     /**
      * Returns a provider-neutral payment intent. The sandbox driver is a

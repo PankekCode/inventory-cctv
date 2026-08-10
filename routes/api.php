@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\Storefront\OtpController;
 use App\Http\Controllers\Api\Storefront\PageController;
 use App\Http\Controllers\Api\SupplierController;
 use App\Http\Controllers\Api\ProductImageController;
+use App\Http\Controllers\Api\PaymentController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -118,6 +119,10 @@ Route::prefix('storefront')->group(function () {
     Route::post('/checkout', [CheckoutController::class, 'process']);
     Route::get('/orders/track/{code}', [OrderController::class, 'track']);
     Route::get('/orders/track/{code}/invoice', [OrderController::class, 'trackInvoice']);
+
+    // Payment Webhook & Details
+    Route::post('/payments/webhook', [PaymentController::class, 'webhook']);
+    Route::get('/payments/{reference}', [PaymentController::class, 'show']);
 
     // Authenticated Customer Routes
     Route::middleware('auth:sanctum')->group(function () {
