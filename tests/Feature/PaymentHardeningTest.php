@@ -124,6 +124,7 @@ class PaymentHardeningTest extends TestCase
 
         $payment = Payment::create([
             'order_id' => $order->id,
+            'idempotency_key' => (string) Str::uuid(),
             'gateway' => 'sandbox',
             'method' => 'qris',
             'provider_reference' => 'SBX-ORDPAY002-FAIL1234',
@@ -183,6 +184,7 @@ class PaymentHardeningTest extends TestCase
 
         $payment = Payment::create([
             'order_id' => $order->id,
+            'idempotency_key' => (string) Str::uuid(),
             'gateway' => 'sandbox',
             'method' => 'qris',
             'provider_reference' => 'SBX-IDEM-001',
@@ -233,6 +235,7 @@ class PaymentHardeningTest extends TestCase
 
         $payment = Payment::create([
             'order_id' => $order->id,
+            'idempotency_key' => (string) Str::uuid(),
             'gateway' => 'sandbox',
             'method' => 'qris',
             'provider_reference' => 'SBX-AUTH-001',
