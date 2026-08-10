@@ -1,8 +1,10 @@
 # CCTV Inventory API
 
-REST API untuk sistem manajemen inventory CCTV menggunakan Laravel.
+REST API untuk sistem manajemen inventory CCTV dan Storefront E-Commerce Hablun CCTV menggunakan Laravel.
 
-Project ini digunakan untuk mengelola data barang, kategori, supplier/brand, harga jual, serta pergerakan stok barang.
+> 📖 **Dokumentasi Lengkap API:** Silakan baca [API_DOCUMENTATION.md](file:///d:/Projek/Inventory/inventory-cctv/API_DOCUMENTATION.md) untuk melihat daftar endpoint, parameter, contoh request, dan response JSON.
+
+Project ini digunakan untuk mengelola data barang, kategori, supplier/brand, harga jual, pergerakan stok barang, serta transaksi e-commerce storefront.
 
 ---
 
