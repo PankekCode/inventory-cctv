@@ -25,6 +25,12 @@ class OrderService
         return DB::transaction(function () use ($order, $technician, $actorId): Order {
             $order = Order::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
 
+            if (!$technician->is_active) {
+                throw ValidationException::withMessages([
+                    'technician' => ['Teknisi yang dipilih sedang tidak aktif.'],
+                ]);
+            }
+
             if ($order->payment_status !== 'paid') {
                 throw ValidationException::withMessages([
                     'order' => ['Teknisi hanya dapat ditugaskan untuk pesanan yang sudah dibayar.'],
@@ -66,6 +72,10 @@ class OrderService
                 'cancelled' => 'Pesanan dibatalkan',
                 default => 'Status pesanan diperbarui',
             };
+
+            if ($status === 'cancelled') {
+                app(PaymentService::class)->releaseReservations($order);
+            }
 
             $order->update([
                 'status' => $status,

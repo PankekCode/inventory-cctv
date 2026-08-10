@@ -137,7 +137,7 @@ class PaymentService
         return DB::transaction(function () use ($order, $actorId): Order {
             $order = Order::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
 
-            if (!in_array($order->status, ['awaiting_payment', 'payment_expired'], true)) {
+            if (!in_array($order->status, ['awaiting_payment', 'payment_expired', 'order_received', 'technician_scheduled'], true)) {
                 throw ValidationException::withMessages([
                     'order' => ['Pesanan tidak dapat dibatalkan pada status saat ini.'],
                 ]);
@@ -204,18 +204,34 @@ class PaymentService
         }
     }
 
-    private function releaseReservations(Order $order): void
+    public function releaseReservations(Order $order): void
     {
         $reservations = InventoryReservation::query()
             ->where('order_id', $order->id)
-            ->where('status', 'reserved')
+            ->whereIn('status', ['reserved', 'committed'])
             ->orderBy('item_id')
             ->lockForUpdate()
             ->get();
 
         foreach ($reservations as $reservation) {
             $item = Item::query()->whereKey($reservation->item_id)->lockForUpdate()->firstOrFail();
-            $item->decrement('stock_reserved', min($item->stock_reserved, $reservation->quantity));
+
+            if ($reservation->status === 'reserved') {
+                $item->decrement('stock_reserved', min($item->stock_reserved, $reservation->quantity));
+            } elseif ($reservation->status === 'committed') {
+                $item->increment('stock', $reservation->quantity);
+                StockMovement::create([
+                    'item_id' => $item->id,
+                    'user_id' => $order->user_id,
+                    'type' => StockMovementType::IN,
+                    'quantity' => $reservation->quantity,
+                    'price' => $item->purchase_price,
+                    'movement_date' => now()->toDateString(),
+                    'reference' => $order->unique_order_code,
+                    'note' => 'Pengembalian stok otomatis untuk pesanan dibatalkan.',
+                ]);
+            }
+
             $reservation->update([
                 'status' => 'released',
                 'released_at' => now(),

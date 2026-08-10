@@ -55,7 +55,7 @@ class CartController extends Controller
         $guestToken = $request->input('guest_token');
 
         $cart = $this->cartService->getOrCreate($user, $guestToken);
-        $cartItem = $cart->items()->where('id', $itemId)->orWhere('product_variant_id', $itemId)->firstOrFail();
+        $cartItem = $this->findCartItem($cart, $itemId);
         $updatedCart = $this->cartService->updateItem($cart, $cartItem->product_variant_id, (int) $request->input('quantity'));
 
         return response()->json([
@@ -70,12 +70,27 @@ class CartController extends Controller
         $guestToken = $request->query('guest_token') ?: $request->input('guest_token');
 
         $cart = $this->cartService->getOrCreate($user, $guestToken);
-        $cartItem = $cart->items()->where('id', $itemId)->orWhere('product_variant_id', $itemId)->firstOrFail();
+        $cartItem = $this->findCartItem($cart, $itemId);
         $updatedCart = $this->cartService->updateItem($cart, $cartItem->product_variant_id, 0);
 
         return response()->json([
             'message' => 'Produk berhasil dihapus dari keranjang.',
             'data' => $updatedCart,
         ]);
+    }
+
+    private function findCartItem(\App\Models\Cart $cart, int $itemId): \App\Models\CartItem
+    {
+        $item = $cart->items()->where('id', $itemId)->first();
+
+        if ($item) {
+            return $item;
+        }
+
+        if (\App\Models\CartItem::where('id', $itemId)->exists()) {
+            abort(404, 'Item tidak ditemukan di keranjang.');
+        }
+
+        return $cart->items()->where('product_variant_id', $itemId)->firstOrFail();
     }
 }

@@ -45,17 +45,15 @@ class ItemPriceImport implements ToCollection, WithHeadingRow
             }
 
 
-            ItemPrice::updateOrCreate(
+            if (isset($row['personal']) && $row['personal'] !== null) {
+                ItemPrice::updateOrCreate(
+                    ['item_id' => $item->id],
+                    ['price' => $row['personal']]
+                );
 
-                [
-                    'item_id' => $item->id
-                ],
-
-                [
-                    'price' => $row['personal']
-                ]
-
-            );
+                \App\Models\ProductVariant::where('sku', $row['kode_barang'])
+                    ->update(['price' => $row['personal']]);
+            }
 
         }
 

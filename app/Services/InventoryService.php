@@ -51,13 +51,14 @@ class InventoryService
     {
         return DB::transaction(function () use ($data) {
 
-            $item = Item::findOrFail(
-                $data['item_id']
-            );
+            $item = Item::query()
+                ->whereKey($data['item_id'])
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        if ($item->stock < $data['quantity']) {
-            throw new InsufficientStockException();
-        }
+            if ($item->available_stock < $data['quantity']) {
+                throw new InsufficientStockException();
+            }
 
             StockMovement::create([
                 'item_id' => $item->id,

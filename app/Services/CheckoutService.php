@@ -177,7 +177,7 @@ class CheckoutService
         $variants = ProductVariant::query()
             ->whereIn('id', array_keys($quantities))
             ->where('is_active', true)
-            ->with(['product', 'components.item', 'priceTiers'])
+            ->with(['product', 'components.item'])
             ->get()
             ->keyBy('id');
 
@@ -191,7 +191,7 @@ class CheckoutService
             ->map(function (int $quantity, int $variantId) use ($variants): array {
                 /** @var ProductVariant $variant */
                 $variant = $variants->get($variantId);
-                $unitPrice = (float) $variant->priceForQuantity($quantity);
+                $unitPrice = (float) $variant->price;
 
                 return [
                     'variant' => $variant,

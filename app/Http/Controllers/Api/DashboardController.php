@@ -11,10 +11,11 @@ class DashboardController extends Controller
         protected DashboardService $dashboardService
     ) {}
 
-    public function index()
+    public function index(\Illuminate\Http\Request $request)
     {
         return response()->json([
-            'data' => $this->dashboardService->summary()
+            'message' => 'Laporan penjualan dan inventori berhasil diambil.',
+            'data' => $this->dashboardService->summary($request->all())
         ]);
     }
 }

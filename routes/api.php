@@ -29,7 +29,16 @@ Route::prefix('auth')->group(function () {
     });
 });
 
-Route::middleware('auth:sanctum')->group(function () {
+use App\Http\Controllers\Api\Admin\BrandController as AdminBrandController;
+use App\Http\Controllers\Api\Admin\ProductController as AdminProductController;
+use App\Http\Controllers\Api\Admin\ProductVariantController as AdminProductVariantController;
+use App\Http\Controllers\Api\Admin\ProductImageController as AdminProductImageController;
+use App\Http\Controllers\Api\Admin\ProductFeatureController as AdminProductFeatureController;
+use App\Http\Controllers\Api\Admin\ProductVariantComponentController as AdminProductComponentController;
+
+use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
+
+Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::apiResource('categories', CategoryController::class);
     Route::apiResource('suppliers', SupplierController::class);
     Route::apiResource('items', ItemController::class);
@@ -38,14 +47,49 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('stock-out', [StockController::class, 'stockOut']);
     Route::apiResource('stock-movements', StockMovementController::class)->only(['index', 'show']);
     Route::get('dashboard', [DashboardController::class, 'index']);
-    Route::post('/products/{product}/images', [ProductImageController::class, 'store']);
-});
 
-// Import Excel
-Route::post('/import/supplier', [ImportController::class, 'supplier']);
-Route::post('/import/item', [ImportController::class, 'item']);
-Route::post('/import/price', [ImportController::class, 'itemPrice']);
-// Route::post('/import/serial-number', [ImportController::class, 'serialNumber']);
+    // Admin Product & Catalog Management
+    Route::apiResource('brands', AdminBrandController::class);
+    Route::apiResource('products', AdminProductController::class);
+    Route::apiResource('variants', AdminProductVariantController::class)->except(['store']);
+    Route::get('products/{product}/variants', [AdminProductVariantController::class, 'index']);
+    Route::post('products/{product}/variants', [AdminProductVariantController::class, 'store']);
+
+    // Admin Images & Features
+    Route::post('products/{product}/images', [AdminProductImageController::class, 'store']);
+    Route::put('images/{image}', [AdminProductImageController::class, 'update']);
+    Route::delete('images/{image}', [AdminProductImageController::class, 'destroy']);
+
+    Route::post('products/{product}/features', [AdminProductFeatureController::class, 'store']);
+    Route::put('features/{feature}', [AdminProductFeatureController::class, 'update']);
+    Route::delete('features/{feature}', [AdminProductFeatureController::class, 'destroy']);
+
+    // Admin Variant Bundle Components
+    Route::get('variants/{variant}/components', [AdminProductComponentController::class, 'index']);
+    Route::post('variants/{variant}/components', [AdminProductComponentController::class, 'store']);
+    Route::put('components/{component}', [AdminProductComponentController::class, 'update']);
+    Route::delete('components/{component}', [AdminProductComponentController::class, 'destroy']);
+
+    // Admin Order Management
+    Route::prefix('admin')->group(function () {
+        Route::get('orders', [AdminOrderController::class, 'index']);
+        Route::get('orders/{order}', [AdminOrderController::class, 'show']);
+        Route::get('orders/{order}/invoice', [AdminOrderController::class, 'invoice']);
+        Route::patch('orders/{order}/status', [AdminOrderController::class, 'updateStatus']);
+        Route::put('orders/{order}/status', [AdminOrderController::class, 'updateStatus']);
+        Route::post('orders/{order}/assign-technician', [AdminOrderController::class, 'assignTechnician']);
+    });
+    Route::get('orders', [AdminOrderController::class, 'index']);
+    Route::get('orders/{order}', [AdminOrderController::class, 'show']);
+    Route::get('orders/{order}/invoice', [AdminOrderController::class, 'invoice']);
+    Route::patch('orders/{order}/status', [AdminOrderController::class, 'updateStatus']);
+    Route::post('orders/{order}/assign-technician', [AdminOrderController::class, 'assignTechnician']);
+
+    // Import Excel
+    Route::post('/import/supplier', [ImportController::class, 'supplier']);
+    Route::post('/import/item', [ImportController::class, 'item']);
+    Route::post('/import/price', [ImportController::class, 'itemPrice']);
+});
 
 
 // E-Commerce Storefront API (Hablun CCTV Customer App)
@@ -73,6 +117,7 @@ Route::prefix('storefront')->group(function () {
 
     Route::post('/checkout', [CheckoutController::class, 'process']);
     Route::get('/orders/track/{code}', [OrderController::class, 'track']);
+    Route::get('/orders/track/{code}/invoice', [OrderController::class, 'trackInvoice']);
 
     // Authenticated Customer Routes
     Route::middleware('auth:sanctum')->group(function () {
@@ -83,6 +128,7 @@ Route::prefix('storefront')->group(function () {
 
         Route::get('/orders', [OrderController::class, 'index']);
         Route::get('/orders/{id}', [OrderController::class, 'show']);
+        Route::get('/orders/{id}/invoice', [OrderController::class, 'invoice']);
         Route::post('/orders/{id}/cancel', [OrderController::class, 'cancel']);
     });
 });

@@ -11,7 +11,8 @@ use Illuminate\Http\Request;
 class OrderController extends Controller
 {
     public function __construct(
-        protected OrderService $orderService
+        protected OrderService $orderService,
+        protected \App\Services\InvoiceService $invoiceService,
     ) {}
 
     public function track(string $code): JsonResponse
@@ -30,6 +31,15 @@ class OrderController extends Controller
         return response()->json([
             'data' => $order,
         ]);
+    }
+
+    public function trackInvoice(string $code)
+    {
+        $order = Order::query()
+            ->where('unique_order_code', strtoupper(trim($code)))
+            ->firstOrFail();
+
+        return $this->invoiceService->download($order);
     }
 
     public function index(Request $request): JsonResponse
@@ -71,6 +81,16 @@ class OrderController extends Controller
         return response()->json([
             'data' => $order,
         ]);
+    }
+
+    public function invoice(Request $request, int $id)
+    {
+        $order = Order::query()
+            ->where('user_id', $request->user()->id)
+            ->where('id', $id)
+            ->firstOrFail();
+
+        return $this->invoiceService->download($order);
     }
 
     public function cancel(Request $request, int $id): JsonResponse

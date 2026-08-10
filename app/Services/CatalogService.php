@@ -40,7 +40,7 @@ class CatalogService
                 'images',
                 'variants' => fn (HasMany $query) => $query
                     ->where('is_active', true)
-                    ->with(['components.item', 'priceTiers']),
+                    ->with(['components.item']),
             ])
             ->withAvg(['reviews as average_rating' => fn (Builder $query) => $query->where('is_published', true)], 'rating')
             ->withCount(['reviews as review_count' => fn (Builder $query) => $query->where('is_published', true)])
@@ -99,7 +99,7 @@ class CatalogService
                 'features',
                 'variants' => fn (HasMany $query) => $query
                     ->where('is_active', true)
-                    ->with(['components.item', 'priceTiers']),
+                    ->with(['components.item']),
                 'reviews' => fn (HasMany $query) => $query
                     ->where('is_published', true)
                     ->latest(),

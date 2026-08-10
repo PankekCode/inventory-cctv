@@ -51,11 +51,6 @@ class ProductVariant extends Model
 
     public function priceForQuantity(int $quantity): string
     {
-        $tier = $this->priceTiers
-            ->filter(fn (ProductVariantPrice $price): bool => $price->minimum_quantity <= $quantity)
-            ->sortByDesc('minimum_quantity')
-            ->first();
-
-        return (string) ($tier?->amount ?? $this->price);
+        return (string) $this->price;
     }
 }
