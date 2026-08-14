@@ -167,7 +167,7 @@ class PaymentService
         return DB::transaction(function () use ($order, $actorId): Order {
             $order = Order::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
 
-            if (!in_array($order->status, ['awaiting_payment', 'payment_expired', 'order_received', 'technician_scheduled'], true)) {
+            if (!in_array($order->status, ['awaiting_payment', 'payment_expired', 'order_received'], true)) {
                 throw ValidationException::withMessages([
                     'order' => ['Pesanan tidak dapat dibatalkan pada status saat ini.'],
                 ]);

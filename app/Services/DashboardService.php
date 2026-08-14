@@ -28,8 +28,6 @@ class DashboardService
         $pendingOrders = (clone $salesQuery)->whereIn('status', [
             'awaiting_payment',
             'order_received',
-            'technician_scheduled',
-            'technician_en_route',
             'installation_in_progress',
         ])->count();
         $cancelledOrders = (clone $salesQuery)->where('status', 'cancelled')->count();

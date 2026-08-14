@@ -49,11 +49,6 @@ class OrderResource extends JsonResource
                 'qris_payload' => $payment->qris_payload,
                 'expires_at' => $payment->expires_at,
             ])),
-            'technician' => $this->whenLoaded('technician', fn () => $this->technician ? [
-                'name' => $this->technician->name,
-                'photo_path' => $this->technician->photo_path,
-                'phone_e164' => $this->technician->phone_e164,
-            ] : null),
             'status_history' => $this->whenLoaded('statusHistories', fn () => $this->statusHistories->map(fn ($history) => [
                 'status' => $history->status,
                 'title' => $history->title,

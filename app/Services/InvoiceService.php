@@ -10,7 +10,7 @@ class InvoiceService
 {
     public function getInvoiceData(Order $order): array
     {
-        $order->load(['user', 'technician', 'items.product', 'items.variant', 'payments']);
+        $order->load(['user', 'items.product', 'items.variant', 'payments']);
         $company = CompanyProfile::first();
 
         return [

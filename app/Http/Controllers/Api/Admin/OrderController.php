@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\OrderResource;
 use App\Models\Order;
-use App\Models\Technician;
 use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -24,7 +23,7 @@ class OrderController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $query = Order::query()->with(['user', 'technician', 'items', 'payments', 'statusHistories']);
+        $query = Order::query()->with(['user', 'items', 'payments', 'statusHistories']);
 
         if ($request->has('status')) {
             $query->where('status', $request->query('status'));
@@ -52,7 +51,6 @@ class OrderController extends Controller
         return response()->json([
             'data' => new OrderResource($order->load([
                 'user',
-                'technician',
                 'items.product',
                 'items.variant',
                 'payments',
@@ -77,26 +75,6 @@ class OrderController extends Controller
 
         return response()->json([
             'message' => 'Status pesanan berhasil diperbarui.',
-            'data' => new OrderResource($updatedOrder),
-        ]);
-    }
-
-    public function assignTechnician(Request $request, Order $order): JsonResponse
-    {
-        $request->validate([
-            'technician_id' => ['required', 'exists:technicians,id'],
-        ]);
-
-        $technician = Technician::findOrFail($request->input('technician_id'));
-
-        $updatedOrder = $this->orderService->assignTechnician(
-            $order,
-            $technician,
-            auth()->id()
-        );
-
-        return response()->json([
-            'message' => 'Teknisi berhasil ditugaskan.',
             'data' => new OrderResource($updatedOrder),
         ]);
     }

@@ -11,7 +11,6 @@ class Order extends Model
     protected $fillable = [
         'public_id',
         'user_id',
-        'technician_id',
         'unique_order_code',
         'guest_phone_e164',
         'customer_name',
@@ -51,11 +50,6 @@ class Order extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
-    }
-
-    public function technician(): BelongsTo
-    {
-        return $this->belongsTo(Technician::class);
     }
 
     public function items(): HasMany

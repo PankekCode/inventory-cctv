@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Order;
-use App\Models\Technician;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -13,45 +12,10 @@ class OrderService
      * @var array<string, array<int, string>>
      */
     private const TRANSITIONS = [
-        'awaiting_payment' => ['cancelled'],
-        'order_received' => ['technician_scheduled', 'cancelled'],
-        'technician_scheduled' => ['technician_en_route', 'cancelled'],
-        'technician_en_route' => ['installation_in_progress'],
+        'awaiting_payment'       => ['cancelled'],
+        'order_received'         => ['installation_in_progress', 'cancelled'],
         'installation_in_progress' => ['completed'],
     ];
-
-    public function assignTechnician(Order $order, Technician $technician, ?int $actorId = null): Order
-    {
-        return DB::transaction(function () use ($order, $technician, $actorId): Order {
-            $order = Order::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
-
-            if (!$technician->is_active) {
-                throw ValidationException::withMessages([
-                    'technician' => ['Teknisi yang dipilih sedang tidak aktif.'],
-                ]);
-            }
-
-            if ($order->payment_status !== 'paid') {
-                throw ValidationException::withMessages([
-                    'order' => ['Teknisi hanya dapat ditugaskan untuk pesanan yang sudah dibayar.'],
-                ]);
-            }
-
-            $order->update([
-                'technician_id' => $technician->id,
-                'status' => 'technician_scheduled',
-            ]);
-            $order->statusHistories()->create([
-                'actor_id' => $actorId,
-                'status' => 'technician_scheduled',
-                'title' => 'Penjadwalan teknisi',
-                'note' => "Teknisi {$technician->name} telah ditugaskan.",
-                'occurred_at' => now(),
-            ]);
-
-            return $order->fresh()->load('technician', 'items', 'payments', 'statusHistories');
-        });
-    }
 
     public function transition(Order $order, string $status, ?string $note, ?int $actorId = null): Order
     {
@@ -66,11 +30,10 @@ class OrderService
             }
 
             $title = match ($status) {
-                'technician_en_route' => 'Teknisi dalam perjalanan',
                 'installation_in_progress' => 'Proses pemasangan',
-                'completed' => 'Pemasangan selesai',
-                'cancelled' => 'Pesanan dibatalkan',
-                default => 'Status pesanan diperbarui',
+                'completed'                => 'Pemasangan selesai',
+                'cancelled'                => 'Pesanan dibatalkan',
+                default                    => 'Status pesanan diperbarui',
             };
 
             if ($status === 'cancelled') {
@@ -78,18 +41,18 @@ class OrderService
             }
 
             $order->update([
-                'status' => $status,
+                'status'       => $status,
                 'cancelled_at' => $status === 'cancelled' ? now() : $order->cancelled_at,
             ]);
             $order->statusHistories()->create([
-                'actor_id' => $actorId,
-                'status' => $status,
-                'title' => $title,
-                'note' => $note,
+                'actor_id'   => $actorId,
+                'status'     => $status,
+                'title'      => $title,
+                'note'       => $note,
                 'occurred_at' => now(),
             ]);
 
-            return $order->fresh()->load('technician', 'items', 'payments', 'statusHistories');
+            return $order->fresh()->load('items', 'payments', 'statusHistories');
         });
     }
 }
