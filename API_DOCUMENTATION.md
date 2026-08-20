@@ -1,4 +1,4 @@
-﻿# 📚 Dokumentasi Resmi REST API — Hablun CCTV E-Commerce & Inventory Management
+# 📚 Dokumentasi Resmi REST API — Hablun CCTV E-Commerce & Inventory Management
 
 Dokumentasi komprehensif REST API untuk **Sistem E-Commerce Hablun CCTV (Storefront)** dan **Sistem Manajemen Stok & Inventaris Internal (Admin Inventory Management)**.
 
@@ -207,7 +207,7 @@ installation_in_progress ──▶  completed
 {
   "message": "Pesanan berhasil dibuat.",
   "data": {
-    "id": 101, "unique_order_code": "HBL-2026-0001", "status": "awaiting_payment",
+    "id": 101, "order_code": "HBL-260820-A7K3P9", "status": "awaiting_payment",
     "grand_total": "650000.00",
     "payments": [{ "gateway": "sandbox", "payment_url": "https://...", "qris_payload": "00020101...", "expires_at": "2026-08-10T17:00:00Z" }],
     "items": [{ "product_name": "EZVIZ H6c 3MP", "variant_name": "Paket Pemasangan", "quantity": 1, "unit_price": "650000.00", "line_total": "650000.00" }]
@@ -218,13 +218,13 @@ installation_in_progress ──▶  completed
 ---
 
 #### 4.2 Lacak Pesanan Publik (`GET /storefront/orders/track/{code}`)
-- **Endpoint:** `GET /api/storefront/orders/track/HBL-2026-0001`
+- **Endpoint:** `GET /api/storefront/orders/track/HBL-260820-A7K3P9`
 - **Auth:** Public
 - **Response (200):**
 ```json
 {
   "data": {
-    "unique_order_code": "HBL-2026-0001", "customer_name": "Budi Guest",
+    "order_code": "HBL-260820-A7K3P9", "customer_name": "Budi Guest",
     "status": "order_received", "payment_status": "paid", "grand_total": "650000.00",
     "status_histories": [
       { "status": "awaiting_payment", "title": "Menunggu Pembayaran", "note": "Pesanan dibuat.", "occurred_at": "..." },
@@ -247,11 +247,11 @@ installation_in_progress ──▶  completed
 #### 5.1 Webhook Payment Gateway (`POST /storefront/payments/webhook`)
 - **Endpoint:** `POST /api/storefront/payments/webhook`
 - **Request:** `{ "gateway": "sandbox", "provider_reference": "PAY-REF-xxx", "status": "paid", "event_id": "EVT-xxx", "amount": 650000 }`
-- **Response (200):** `{ "message": "Pembayaran berhasil dikonfirmasi.", "data": { "payment_id": 45, "status": "paid", "order_code": "HBL-2026-0001" } }`
+- **Response (200):** `{ "message": "Pembayaran berhasil dikonfirmasi.", "data": { "payment_id": 45, "status": "paid", "order_code": "HBL-260820-A7K3P9" } }`
 
 #### 5.2 Status Pembayaran (`GET /storefront/payments/{reference}`)
 - **Endpoint:** `GET /api/storefront/payments/{reference}`
-- **Query (Guest):** `order_code=HBL-2026-0001` | **Auth (User):** Bearer token
+- **Query (Guest):** `order_code=HBL-260820-A7K3P9` | **Auth (User):** Bearer token
 
 ---
 

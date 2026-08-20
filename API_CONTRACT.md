@@ -419,13 +419,13 @@ awaiting_payment
 #### `GET /storefront/orders/track/{code}`
 🔓 Public — Lacak pesanan berdasarkan kode unik
 
-**Path Params:** `code` string* — Kode unik pesanan (contoh: `HBL-2026-0001`)
+**Path Params:** `code` string* — Kode pesanan (contoh: `HBL-260820-A7K3P9`)
 
 **Response 200:**
 ```json
 {
   "data": {
-    "unique_order_code": "string", "customer_name": "string",
+    "order_code": "string", "customer_name": "string",
     "status": "enum (lihat Status Pesanan)", "payment_status": "string",
     "grand_total": "string (decimal)",
     "status_histories": ["<StatusHistorySchema>"]
