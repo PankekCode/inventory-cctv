@@ -14,11 +14,18 @@ class WhatsappService
             .config('commerce.otp.ttl_minutes').' menit. Jangan berikan kode ini kepada siapa pun.';
 
         if (config('commerce.whatsapp.driver') === 'log') {
-            Log::info('WhatsApp OTP queued to log driver.', [
-                'phone' => $phone,
-                'purpose' => $purpose,
-                'message' => $message,
-            ]);
+            if (app()->environment('local')) {
+                Log::info('[DEV ONLY] WhatsApp OTP queued to log driver.', [
+                    'phone'   => $phone,
+                    'purpose' => $purpose,
+                    'message' => $message,
+                ]);
+            } else {
+                Log::info('WhatsApp OTP dispatched.', [
+                    'phone'   => $phone,
+                    'purpose' => $purpose,
+                ]);
+            }
 
             return;
         }

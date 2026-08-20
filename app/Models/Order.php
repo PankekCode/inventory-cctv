@@ -11,7 +11,8 @@ class Order extends Model
     protected $fillable = [
         'public_id',
         'user_id',
-        'unique_order_code',
+        'technician_id',
+        'order_code',
         'guest_phone_e164',
         'customer_name',
         'customer_email',
@@ -70,5 +71,10 @@ class Order extends Model
     public function reservations(): HasMany
     {
         return $this->hasMany(InventoryReservation::class);
+    }
+
+    public function technician(): BelongsTo
+    {
+        return $this->belongsTo(Technician::class);
     }
 }

@@ -56,7 +56,7 @@ class AdminOrderManagementTest extends TestCase
     {
         $order = Order::create([
             'public_id' => (string) Str::uuid(),
-            'unique_order_code' => 'ORD-2026-0001',
+            'order_code' => 'ORD-2026-0001',
             'customer_name' => 'John Doe',
             'customer_email' => 'john@example.com',
             'installation_address' => 'Jl. Kebon Jeruk No. 5',
@@ -72,7 +72,7 @@ class AdminOrderManagementTest extends TestCase
             ->getJson('/api/admin/orders');
 
         $listResponse->assertStatus(200)
-            ->assertJsonPath('data.0.unique_order_code', 'ORD-2026-0001');
+            ->assertJsonPath('data.0.order_code', 'ORD-2026-0001');
 
         // 4. View order details
         $showResponse = $this->actingAs($this->admin, 'sanctum')
@@ -87,7 +87,7 @@ class AdminOrderManagementTest extends TestCase
     {
         $order = Order::create([
             'public_id' => (string) Str::uuid(),
-            'unique_order_code' => 'ORD-2026-0002',
+            'order_code' => 'ORD-2026-0002',
             'customer_name' => 'Jane Doe',
             'installation_address' => 'Jl. Sudirman No. 10',
             'payment_method' => 'qris',
@@ -97,27 +97,27 @@ class AdminOrderManagementTest extends TestCase
             'grand_total' => 1000000.00,
         ]);
 
-        // 5. Update valid status transition (order_received -> technician_scheduled)
+        // 5. Update valid status transition (order_received -> installation_in_progress)
         $validResponse = $this->actingAs($this->admin, 'sanctum')
             ->patchJson('/api/admin/orders/' . $order->id . '/status', [
-                'status' => 'technician_scheduled',
+                'status' => 'installation_in_progress',
                 'note' => 'Jadwal instalasi telah disetujui',
             ]);
 
         $validResponse->assertStatus(200)
-            ->assertJsonPath('data.status', 'technician_scheduled');
+            ->assertJsonPath('data.status', 'installation_in_progress');
 
         // 9. Status history is recorded correctly
         $this->assertDatabaseHas('order_status_histories', [
             'order_id' => $order->id,
-            'status' => 'technician_scheduled',
+            'status' => 'installation_in_progress',
             'note' => 'Jadwal instalasi telah disetujui',
         ]);
 
-        // 6. Invalid status transition (technician_scheduled -> completed directly) -> 422
+        // 6. Invalid status transition (installation_in_progress -> awaiting_payment directly) -> 422
         $invalidResponse = $this->actingAs($this->admin, 'sanctum')
             ->patchJson('/api/admin/orders/' . $order->id . '/status', [
-                'status' => 'completed',
+                'status' => 'awaiting_payment',
             ]);
 
         $invalidResponse->assertStatus(422)
@@ -140,7 +140,7 @@ class AdminOrderManagementTest extends TestCase
 
         $order = Order::create([
             'public_id' => (string) Str::uuid(),
-            'unique_order_code' => 'ORD-2026-0003',
+            'order_code' => 'ORD-2026-0003',
             'customer_name' => 'Ahmad',
             'installation_address' => 'Jl. Gatot Subroto No. 1',
             'payment_method' => 'qris',
@@ -166,8 +166,7 @@ class AdminOrderManagementTest extends TestCase
             ]);
 
         $activeResponse->assertStatus(200)
-            ->assertJsonPath('data.technician.name', 'Budi Santoso')
-            ->assertJsonPath('data.status', 'technician_scheduled');
+            ->assertJsonPath('data.technician.name', 'Budi Santoso');
     }
 
     public function test_customer_order_access_remains_restricted_to_own_orders(): void
@@ -183,7 +182,7 @@ class AdminOrderManagementTest extends TestCase
         $orderCustomer = Order::create([
             'public_id' => (string) Str::uuid(),
             'user_id' => $this->customer->id,
-            'unique_order_code' => 'ORD-CUST-1',
+            'order_code' => 'ORD-CUST-1',
             'customer_name' => 'Customer User',
             'installation_address' => 'Alamat Customer',
             'payment_method' => 'qris',

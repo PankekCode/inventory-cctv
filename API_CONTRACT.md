@@ -1,4 +1,4 @@
-﻿# 📄 API Contract — Hablun CCTV REST API
+# 📄 API Contract — Hablun CCTV REST API
 
 > **Versi:** 1.0.0
 > **Base URL:** `http://localhost:8000/api`
@@ -23,7 +23,7 @@
 ```
 id                  : integer
 public_id           : uuid
-unique_order_code   : string          -- contoh: "HBL-2026-0001"
+order_code          : string          -- contoh: "HBL-260820-A7K3P9" (format: HBL-YYMMDD-XXXXXX)
 customer_name       : string
 installation_address: string
 installation_city   : string

@@ -36,7 +36,7 @@ class PaymentController extends Controller
                     'payment_id' => $payment->id,
                     'provider_reference' => $payment->provider_reference,
                     'status' => $payment->status,
-                    'order_code' => $payment->order->unique_order_code,
+                    'order_code' => $payment->order->order_code,
                 ],
             ]);
         }
@@ -69,9 +69,9 @@ class PaymentController extends Controller
                 return response()->json(['message' => 'Anda tidak memiliki akses ke data pembayaran ini.'], 403);
             }
         } else {
-            // Guest verification requirement: Must provide matching unique order code via query
+            // Guest verification: must supply matching order code via ?order_code= query param.
             $orderCode = $request->query('order_code');
-            if (!$orderCode || strtoupper(trim($orderCode)) !== $order->unique_order_code) {
+            if (!$orderCode || strtoupper(trim($orderCode)) !== $order->order_code) {
                 return response()->json(['message' => 'Akses pembayaran guest membutuhkan kode pesanan yang valid.'], 403);
             }
         }
@@ -88,7 +88,7 @@ class PaymentController extends Controller
                 'expires_at' => $payment->expires_at,
                 'paid_at' => $payment->paid_at,
                 'order' => [
-                    'unique_order_code' => $order->unique_order_code,
+                    'order_code'   => $order->order_code,
                     'customer_name' => $order->customer_name,
                     'grand_total' => (string) $order->grand_total,
                     'status' => $order->status,

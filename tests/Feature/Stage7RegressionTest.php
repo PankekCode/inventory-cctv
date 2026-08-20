@@ -207,7 +207,7 @@ class Stage7RegressionTest extends TestCase
         $order = Order::create([
             'public_id' => (string) Str::uuid(),
             'user_id' => $this->customer->id,
-            'unique_order_code' => 'ORD-REG-19-27',
+            'order_code' => 'ORD-REG-19-27',
             'customer_name' => 'Customer User',
             'installation_address' => 'Jl. Merdeka 10',
             'payment_method' => 'qris',
@@ -231,11 +231,11 @@ class Stage7RegressionTest extends TestCase
 
         // 21 & 22. Valid status transition & invalid status transition rejection
         $this->actingAs($this->admin, 'sanctum')->patchJson('/api/admin/orders/' . $order->id . '/status', [
-            'status' => 'technician_scheduled',
+            'status' => 'installation_in_progress',
         ])->assertStatus(200);
 
         $this->actingAs($this->admin, 'sanctum')->patchJson('/api/admin/orders/' . $order->id . '/status', [
-            'status' => 'completed', // Invalid transition from technician_scheduled directly
+            'status' => 'awaiting_payment', // Invalid transition from installation_in_progress
         ])->assertStatus(422);
 
         // 23 & 24. Assign active technician vs inactive technician
@@ -248,7 +248,7 @@ class Stage7RegressionTest extends TestCase
         ])->assertStatus(200);
 
         // 25. Status history preserved
-        $this->assertDatabaseHas('order_status_histories', ['order_id' => $order->id, 'status' => 'technician_scheduled']);
+        $this->assertDatabaseHas('order_status_histories', ['order_id' => $order->id, 'status' => 'installation_in_progress']);
     }
 
     public function test_checks_28_and_29_inventory_stock_in_and_stock_out(): void

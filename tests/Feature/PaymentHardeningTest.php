@@ -59,7 +59,7 @@ class PaymentHardeningTest extends TestCase
         $order = Order::create([
             'public_id' => (string) Str::uuid(),
             'user_id' => $this->customer->id,
-            'unique_order_code' => 'ORD-PAY-001',
+            'order_code' => 'ORD-PAY-001',
             'customer_name' => 'Customer A',
             'installation_address' => 'Jl. Kebon Sirih No. 1',
             'payment_method' => 'qris',
@@ -112,7 +112,7 @@ class PaymentHardeningTest extends TestCase
         $order = Order::create([
             'public_id' => (string) Str::uuid(),
             'user_id' => $this->customer->id,
-            'unique_order_code' => 'ORD-PAY-002',
+            'order_code' => 'ORD-PAY-002',
             'customer_name' => 'Customer A',
             'installation_address' => 'Jl. Kebon Sirih No. 2',
             'payment_method' => 'qris',
@@ -166,7 +166,7 @@ class PaymentHardeningTest extends TestCase
         $order = Order::create([
             'public_id' => (string) Str::uuid(),
             'user_id' => $this->customer->id,
-            'unique_order_code' => 'ORD-IDEM-001',
+            'order_code' => 'ORD-IDEM-001',
             'customer_name' => 'Customer A',
             'installation_address' => 'Jl. Kebon Sirih No. 3',
             'payment_method' => 'qris',
@@ -223,7 +223,7 @@ class PaymentHardeningTest extends TestCase
         $order = Order::create([
             'public_id' => (string) Str::uuid(),
             'user_id' => $this->customer->id,
-            'unique_order_code' => 'ORD-AUTH-001',
+            'order_code' => 'ORD-AUTH-001',
             'customer_name' => 'Customer A',
             'installation_address' => 'Jl. Kebon Sirih No. 4',
             'payment_method' => 'qris',

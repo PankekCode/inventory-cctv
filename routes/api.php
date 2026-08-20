@@ -78,6 +78,7 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
         Route::get('orders/{order}/invoice', [AdminOrderController::class, 'invoice']);
         Route::patch('orders/{order}/status', [AdminOrderController::class, 'updateStatus']);
         Route::put('orders/{order}/status', [AdminOrderController::class, 'updateStatus']);
+        Route::post('orders/{order}/assign-technician', [AdminOrderController::class, 'assignTechnician']);
     });
     Route::get('orders', [AdminOrderController::class, 'index']);
     Route::get('orders/{order}', [AdminOrderController::class, 'show']);
@@ -104,8 +105,8 @@ Route::prefix('storefront')->group(function () {
     Route::get('/services', [PageController::class, 'services']);
 
     // WhatsApp OTP & Phone Auth
-    Route::post('/otp/send', [OtpController::class, 'send']);
-    Route::post('/otp/verify', [OtpController::class, 'verify']);
+    Route::post('/otp/send', [OtpController::class, 'send'])->middleware('throttle:10,1');
+    Route::post('/otp/verify', [OtpController::class, 'verify'])->middleware('throttle:20,1');
     Route::post('/auth/login-otp', [CustomerAuthController::class, 'loginWithOtp']);
 
     // Public Cart & Checkout (Guest support)
@@ -115,8 +116,8 @@ Route::prefix('storefront')->group(function () {
     Route::delete('/cart/items/{id}', [CartController::class, 'removeItem']);
 
     Route::post('/checkout', [CheckoutController::class, 'process']);
-    Route::get('/orders/track/{code}', [OrderController::class, 'track']);
-    Route::get('/orders/track/{code}/invoice', [OrderController::class, 'trackInvoice']);
+    Route::get('/orders/track/{code}', [OrderController::class, 'track'])->middleware('throttle:30,1');
+    Route::get('/orders/track/{code}/invoice', [OrderController::class, 'trackInvoice'])->middleware('throttle:30,1');
 
     // Payment Webhook & Details
     Route::post('/payments/webhook', [PaymentController::class, 'webhook']);

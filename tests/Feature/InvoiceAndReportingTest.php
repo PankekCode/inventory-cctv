@@ -55,7 +55,7 @@ class InvoiceAndReportingTest extends TestCase
         $order = Order::create([
             'public_id' => (string) Str::uuid(),
             'user_id' => $this->customer->id,
-            'unique_order_code' => 'ORD-INV-001',
+            'order_code' => 'ORD-INV-001',
             'customer_name' => 'Customer A',
             'customer_email' => 'customera@hablun.com',
             'installation_address' => 'Jl. Kebon Sirih No. 12',
@@ -93,9 +93,10 @@ class InvoiceAndReportingTest extends TestCase
             ->getJson('/api/admin/orders/' . $order->id . '/invoice')
             ->assertStatus(200);
 
-        // 4. Guest track invoice works via code
-        $this->getJson('/api/storefront/orders/track/' . $order->unique_order_code . '/invoice')
-            ->assertStatus(200);
+        // 4. Unauthenticated access to authenticated customer's invoice -> 403
+        $this->app['auth']->forgetGuards();
+        $this->getJson('/api/storefront/orders/track/' . $order->order_code . '/invoice')
+            ->assertStatus(403);
 
         // 5, 6, 7. InvoiceService data integrity: historical price, tax = 0, total matches
         /** @var InvoiceService $invoiceService */
@@ -122,7 +123,7 @@ class InvoiceAndReportingTest extends TestCase
         // Create completed order
         Order::create([
             'public_id' => (string) Str::uuid(),
-            'unique_order_code' => 'ORD-REP-COMPLETED',
+            'order_code' => 'ORD-REP-COMPLETED',
             'customer_name' => 'Buyer Completed',
             'installation_address' => 'Jl. Merdeka',
             'payment_method' => 'qris',
@@ -136,7 +137,7 @@ class InvoiceAndReportingTest extends TestCase
         // Create cancelled order (should NOT count as completed sales)
         Order::create([
             'public_id' => (string) Str::uuid(),
-            'unique_order_code' => 'ORD-REP-CANCELLED',
+            'order_code' => 'ORD-REP-CANCELLED',
             'customer_name' => 'Buyer Cancelled',
             'installation_address' => 'Jl. Merdeka',
             'payment_method' => 'qris',

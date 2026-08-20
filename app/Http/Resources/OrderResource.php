@@ -12,7 +12,7 @@ class OrderResource extends JsonResource
         return [
             'id' => $this->id,
             'public_id' => $this->public_id,
-            'unique_order_code' => $this->unique_order_code,
+            'order_code'        => $this->order_code,
             'customer_name' => $this->customer_name,
             'installation_address' => $this->installation_address,
             'installation_city' => $this->installation_city,
@@ -55,6 +55,11 @@ class OrderResource extends JsonResource
                 'note' => $history->note,
                 'occurred_at' => $history->occurred_at,
             ])),
+            'technician' => $this->whenLoaded('technician', fn () => $this->technician ? [
+                'id' => $this->technician->id,
+                'name' => $this->technician->name,
+                'phone_e164' => $this->technician->phone_e164,
+            ] : null),
         ];
     }
 }

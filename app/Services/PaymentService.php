@@ -217,7 +217,7 @@ class PaymentService
                 'quantity' => $reservation->quantity,
                 'price' => $item->purchase_price,
                 'movement_date' => now()->toDateString(),
-                'reference' => $order->unique_order_code,
+                'reference' => $order->order_code,
                 'note' => 'Pengeluaran stok otomatis untuk pesanan terbayar.',
             ]);
 
@@ -257,7 +257,7 @@ class PaymentService
                     'quantity' => $reservation->quantity,
                     'price' => $item->purchase_price,
                     'movement_date' => now()->toDateString(),
-                    'reference' => $order->unique_order_code,
+                    'reference' => $order->order_code,
                     'note' => 'Pengembalian stok otomatis untuk pesanan dibatalkan.',
                 ]);
             }

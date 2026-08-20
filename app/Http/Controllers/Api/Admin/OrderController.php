@@ -35,7 +35,7 @@ class OrderController extends Controller
 
         if ($request->has('search')) {
             $search = trim($request->query('search'));
-            $query->where(fn ($q) => $q->where('unique_order_code', 'like', "%{$search}%")
+            $query->where(fn ($q) => $q->where('order_code', 'like', "%{$search}%")
                 ->orWhere('customer_name', 'like', "%{$search}%")
                 ->orWhere('customer_email', 'like', "%{$search}%")
                 ->orWhere('guest_phone_e164', 'like', "%{$search}%"));
@@ -76,6 +76,30 @@ class OrderController extends Controller
         return response()->json([
             'message' => 'Status pesanan berhasil diperbarui.',
             'data' => new OrderResource($updatedOrder),
+        ]);
+    }
+
+    public function assignTechnician(Request $request, Order $order): JsonResponse
+    {
+        $request->validate([
+            'technician_id' => ['required', 'integer', 'exists:technicians,id'],
+        ]);
+
+        $technician = \App\Models\Technician::whereKey($request->input('technician_id'))
+            ->where('is_active', true)
+            ->first();
+
+        if (!$technician) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'technician' => ['Teknisi tidak aktif atau tidak ditemukan.'],
+            ]);
+        }
+
+        $order->update(['technician_id' => $technician->id]);
+
+        return response()->json([
+            'message' => 'Teknisi berhasil ditugaskan.',
+            'data' => new OrderResource($order->fresh()->load(['user', 'items', 'payments', 'statusHistories', 'technician'])),
         ]);
     }
 }

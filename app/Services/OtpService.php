@@ -32,6 +32,15 @@ class OtpService
             ]);
         }
 
+        // Invalidate any previous unverified OTPs for this phone + purpose
+        // so only the newest OTP is ever usable (Decision 14.2).
+        PhoneVerification::where('phone_e164', $phone)
+            ->where('purpose', $purpose)
+            ->whereNull('verified_at')
+            ->whereNull('consumed_at')
+            ->where('expires_at', '>', now())
+            ->update(['expires_at' => now()]);
+
         RateLimiter::hit($key, $cooldown);
 
         $length = max(4, min(8, (int) config('commerce.otp.length')));

@@ -23,7 +23,7 @@ class PaymentGatewayService implements PaymentGatewayInterface
         $expiresAt = now()->addMinutes((int) config('commerce.payment.pending_minutes'));
 
         if ($driver === 'sandbox') {
-            $reference = 'SBX-'.str_replace('-', '', $order->unique_order_code).'-'.strtoupper(Str::random(8));
+            $reference = 'SBX-'.str_replace('-', '', $order->order_code).'-'.strtoupper(Str::random(8));
 
             return [
                 'gateway' => (string) config('commerce.payment.gateway_name', 'sandbox'),

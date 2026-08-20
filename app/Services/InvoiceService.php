@@ -23,7 +23,7 @@ class InvoiceService
                 ],
             ],
             'invoice' => [
-                'order_code' => $order->unique_order_code,
+                'order_code' => $order->order_code,
                 'order_date' => $order->created_at->format('d M Y H:i'),
                 'payment_status' => $order->payment_status,
                 'order_status' => $order->status,
@@ -184,7 +184,7 @@ class InvoiceService
 
         return response($html, 200, [
             'Content-Type' => 'text/html; charset=UTF-8',
-            'Content-Disposition' => 'inline; filename="invoice-' . $order->unique_order_code . '.html"',
+            'Content-Disposition' => 'inline; filename="invoice-' . $order->order_code . '.html"',
         ]);
     }
 }

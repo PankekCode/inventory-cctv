@@ -58,7 +58,7 @@ class CheckoutService
             $order = Order::create([
                 'public_id' => (string) Str::uuid(),
                 'user_id' => $user?->id,
-                'unique_order_code' => $this->orderCodes->next(),
+                'order_code' => $this->orderCodes->next(),
                 'guest_phone_e164' => $user ? null : $phone,
                 'customer_name' => $data['customer_name'],
                 'customer_email' => $data['customer_email'] ?? $user?->email,

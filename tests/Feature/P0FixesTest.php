@@ -172,7 +172,7 @@ class P0FixesTest extends TestCase
 
         $order = Order::create([
             'public_id' => (string) Str::uuid(),
-            'unique_order_code' => 'ORD-TEST-001',
+            'order_code' => 'ORD-TEST-001',
             'customer_name' => 'Buyer',
             'installation_address' => 'Jl. Test No. 1',
             'payment_method' => 'qris',
