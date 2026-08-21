@@ -38,7 +38,6 @@ class OrderController extends Controller
                 'items',
                 'payments',
                 'statusHistories',
-                'technician',
             ])
             ->first();
 
@@ -156,7 +155,7 @@ class OrderController extends Controller
 
         $query = Order::query()
             ->where('user_id', $user->id)
-            ->with(['items.product', 'payments', 'technician'])
+            ->with(['items.product', 'payments'])
             ->latest();
 
         if ($status = $request->query('status')) {
@@ -185,7 +184,6 @@ class OrderController extends Controller
                 'items.variant',
                 'payments',
                 'statusHistories',
-                'technician',
             ])
             ->firstOrFail();
 

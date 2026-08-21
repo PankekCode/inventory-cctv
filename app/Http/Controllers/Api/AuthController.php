@@ -28,15 +28,14 @@ class AuthController extends Controller
     }
 
 
-    public function logout(): JsonResponse
+    public function logout(\Illuminate\Http\Request $request): JsonResponse
     {
-        auth()->user()
-            ->currentAccessToken()
-            ->delete();
+        $request->user()
+            ?->currentAccessToken()
+            ?->delete();
 
         return response()->json([
-            'message' => 'Logout berhasil.'
+            'message' => 'Logout berhasil.',
         ]);
     }
-
 }

@@ -14,7 +14,6 @@ use App\Models\ProductVariant;
 use App\Models\Review;
 use App\Models\Service;
 use App\Models\Supplier;
-use App\Models\Technician;
 use App\Models\User;
 use App\Services\OrderService;
 use App\Services\PaymentService;
@@ -201,9 +200,6 @@ class Stage7RegressionTest extends TestCase
 
     public function test_checks_19_to_27_order_admin_and_authorization(): void
     {
-        $techActive = Technician::create(['name' => 'Tech Active', 'phone_e164' => '+628111111', 'is_active' => true]);
-        $techInactive = Technician::create(['name' => 'Tech Inactive', 'phone_e164' => '+628222222', 'is_active' => false]);
-
         $order = Order::create([
             'public_id' => (string) Str::uuid(),
             'user_id' => $this->customer->id,
@@ -237,15 +233,6 @@ class Stage7RegressionTest extends TestCase
         $this->actingAs($this->admin, 'sanctum')->patchJson('/api/admin/orders/' . $order->id . '/status', [
             'status' => 'awaiting_payment', // Invalid transition from installation_in_progress
         ])->assertStatus(422);
-
-        // 23 & 24. Assign active technician vs inactive technician
-        $this->actingAs($this->admin, 'sanctum')->postJson('/api/admin/orders/' . $order->id . '/assign-technician', [
-            'technician_id' => $techInactive->id,
-        ])->assertStatus(422);
-
-        $this->actingAs($this->admin, 'sanctum')->postJson('/api/admin/orders/' . $order->id . '/assign-technician', [
-            'technician_id' => $techActive->id,
-        ])->assertStatus(200);
 
         // 25. Status history preserved
         $this->assertDatabaseHas('order_status_histories', ['order_id' => $order->id, 'status' => 'installation_in_progress']);

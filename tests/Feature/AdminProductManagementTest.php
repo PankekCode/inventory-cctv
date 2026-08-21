@@ -257,5 +257,101 @@ class AdminProductManagementTest extends TestCase
         $storefrontResponse = $this->getJson('/api/storefront/products/' . $product->slug);
         $storefrontResponse->assertStatus(200)
             ->assertJsonCount(2, 'data.variants.0.components');
+
+        // Update component
+        $compId = $comp1Response->json('data.id');
+        $this->actingAs($this->admin, 'sanctum')
+            ->putJson('/api/components/' . $compId, ['quantity' => 6])
+            ->assertStatus(200)
+            ->assertJsonPath('data.quantity', 6);
+
+        // Delete component
+        $this->actingAs($this->admin, 'sanctum')
+            ->deleteJson('/api/components/' . $compId)
+            ->assertStatus(200);
+    }
+
+    public function test_admin_can_manage_brands_crud(): void
+    {
+        // 1. Create brand
+        $createRes = $this->actingAs($this->admin, 'sanctum')->postJson('/api/brands', [
+            'name' => 'Uniview',
+            'is_active' => true,
+        ]);
+        $createRes->assertStatus(201)
+            ->assertJsonPath('data.name', 'Uniview')
+            ->assertJsonPath('data.slug', 'uniview');
+
+        $brandId = $createRes->json('data.id');
+
+        // 2. List brands
+        $this->actingAs($this->admin, 'sanctum')->getJson('/api/brands')
+            ->assertStatus(200)
+            ->assertJsonFragment(['name' => 'Uniview']);
+
+        // 3. Show brand
+        $this->actingAs($this->admin, 'sanctum')->getJson('/api/brands/' . $brandId)
+            ->assertStatus(200)
+            ->assertJsonPath('data.name', 'Uniview');
+
+        // 4. Update brand
+        $this->actingAs($this->admin, 'sanctum')->putJson('/api/brands/' . $brandId, [
+            'name' => 'Uniview International',
+        ])->assertStatus(200)
+            ->assertJsonPath('data.name', 'Uniview International');
+
+        // 5. Delete brand
+        $this->actingAs($this->admin, 'sanctum')->deleteJson('/api/brands/' . $brandId)
+            ->assertStatus(200);
+
+        $this->assertDatabaseMissing('brands', ['id' => $brandId]);
+    }
+
+    public function test_admin_can_update_and_delete_product_image_and_feature(): void
+    {
+        Storage::fake('public');
+
+        $product = Product::create([
+            'name' => 'CCTV Test Media',
+            'slug' => 'cctv-test-media',
+            'is_published' => true,
+        ]);
+
+        $file = UploadedFile::fake()->image('test.jpg', 400, 400);
+        $imgRes = $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/products/' . $product->id . '/images', [
+                'image' => $file,
+                'alt_text' => 'Initial Alt',
+            ]);
+        $imgId = $imgRes->json('data.id');
+
+        // Update image
+        $this->actingAs($this->admin, 'sanctum')
+            ->putJson('/api/images/' . $imgId, ['alt_text' => 'Updated Alt'])
+            ->assertStatus(200)
+            ->assertJsonPath('data.alt_text', 'Updated Alt');
+
+        // Delete image
+        $this->actingAs($this->admin, 'sanctum')
+            ->deleteJson('/api/images/' . $imgId)
+            ->assertStatus(200);
+
+        // Feature
+        $featRes = $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/products/' . $product->id . '/features', [
+                'title' => 'Initial Feature',
+            ]);
+        $featId = $featRes->json('data.id');
+
+        // Update feature
+        $this->actingAs($this->admin, 'sanctum')
+            ->putJson('/api/features/' . $featId, ['title' => 'Updated Feature'])
+            ->assertStatus(200)
+            ->assertJsonPath('data.title', 'Updated Feature');
+
+        // Delete feature
+        $this->actingAs($this->admin, 'sanctum')
+            ->deleteJson('/api/features/' . $featId)
+            ->assertStatus(200);
     }
 }

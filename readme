@@ -69,7 +69,6 @@
 #### 4. `installation_schedules`
 * `id` (PK, BigInt, Auto)
 * `order_id` (FK -> `orders.id`, Unique)
-* `technician_team_id` (FK -> `technicians.id`, Nullable)
 * `scheduled_date` (Date, Nullable)
 * `scheduled_time_slot` (VarChar 50, Nullable, e.g., "10:00 - 12:00")
 * `schedule_status` (Enum: 'unscheduled', 'scheduled', 'on_site', 'completed')

@@ -55,11 +55,6 @@ class OrderResource extends JsonResource
                 'note' => $history->note,
                 'occurred_at' => $history->occurred_at,
             ])),
-            'technician' => $this->whenLoaded('technician', fn () => $this->technician ? [
-                'id' => $this->technician->id,
-                'name' => $this->technician->name,
-                'phone_e164' => $this->technician->phone_e164,
-            ] : null),
         ];
     }
 }

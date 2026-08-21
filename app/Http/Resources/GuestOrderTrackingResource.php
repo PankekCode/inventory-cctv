@@ -75,16 +75,6 @@ class GuestOrderTrackingResource extends JsonResource
                 ])
             ),
 
-            // Technician — only when assigned, only name (no internal ID or private contact)
-            'technician'           => $this->whenLoaded('technician', function () {
-                if ($this->technician === null) {
-                    return null;
-                }
-                return [
-                    'name' => $this->technician->name,
-                ];
-            }),
-
             // QRIS payload — only shown while payment is still pending
             // Hidden once paid to reduce unnecessary data exposure.
             'qris_payload'         => $pendingPayment?->qris_payload,

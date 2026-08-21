@@ -78,7 +78,6 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
         Route::get('orders/{order}/invoice', [AdminOrderController::class, 'invoice']);
         Route::patch('orders/{order}/status', [AdminOrderController::class, 'updateStatus']);
         Route::put('orders/{order}/status', [AdminOrderController::class, 'updateStatus']);
-        Route::post('orders/{order}/assign-technician', [AdminOrderController::class, 'assignTechnician']);
     });
     Route::get('orders', [AdminOrderController::class, 'index']);
     Route::get('orders/{order}', [AdminOrderController::class, 'show']);

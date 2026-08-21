@@ -157,7 +157,6 @@ class CheckoutService
                 'items.variant',
                 'payments',
                 'statusHistories',
-                'technician',
             ]);
         });
     }

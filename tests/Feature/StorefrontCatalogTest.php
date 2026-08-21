@@ -71,4 +71,32 @@ class StorefrontCatalogTest extends TestCase
         $response->assertStatus(200)
             ->assertJsonPath('data.name', 'CCTV Analog Dahua 4 Cam');
     }
+
+    public function test_can_fetch_catalog_categories(): void
+    {
+        CatalogCategory::create([
+            'name' => 'IP Camera',
+            'slug' => 'ip-camera',
+            'is_active' => true,
+        ]);
+
+        $response = $this->getJson('/api/storefront/categories');
+
+        $response->assertStatus(200)
+            ->assertJsonFragment(['slug' => 'ip-camera']);
+    }
+
+    public function test_can_fetch_catalog_brands(): void
+    {
+        Brand::create([
+            'name' => 'Hikvision',
+            'slug' => 'hikvision',
+            'is_active' => true,
+        ]);
+
+        $response = $this->getJson('/api/storefront/brands');
+
+        $response->assertStatus(200)
+            ->assertJsonFragment(['slug' => 'hikvision']);
+    }
 }

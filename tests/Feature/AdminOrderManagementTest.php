@@ -8,7 +8,6 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Supplier;
-use App\Models\Technician;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -26,118 +25,71 @@ class AdminOrderManagementTest extends TestCase
         parent::setUp();
 
         $this->admin = User::create([
-            'name' => 'Admin Staff',
-            'email' => 'admin@hablun.com',
-            'password' => bcrypt('secret123'),
+            'name' => 'Admin User',
+            'email' => 'admin@example.com',
+            'phone' => '08123456789',
             'role' => 'admin',
-            'is_active' => true,
+            'password' => bcrypt('password'),
         ]);
 
         $this->customer = User::create([
             'name' => 'Customer User',
-            'email' => 'customer@hablun.com',
-            'password' => bcrypt('secret123'),
+            'email' => 'cust@example.com',
+            'phone' => '08987654321',
             'role' => 'customer',
-            'is_active' => true,
+            'password' => bcrypt('password'),
         ]);
     }
 
-    public function test_guest_and_customer_are_rejected_from_admin_orders(): void
+    public function test_admin_can_list_orders_and_filter_by_status_and_search(): void
     {
-        // 1. Guest -> 401
-        $this->getJson('/api/admin/orders')->assertStatus(401);
-
-        // 2. Customer -> 403
-        $this->actingAs($this->customer, 'sanctum')->getJson('/api/admin/orders')->assertStatus(403);
-        $this->actingAs($this->customer, 'sanctum')->getJson('/api/orders')->assertStatus(403);
-    }
-
-    public function test_admin_can_list_and_view_order_details(): void
-    {
-        $order = Order::create([
+        Order::create([
             'public_id' => (string) Str::uuid(),
             'order_code' => 'ORD-2026-0001',
-            'customer_name' => 'John Doe',
-            'customer_email' => 'john@example.com',
-            'installation_address' => 'Jl. Kebon Jeruk No. 5',
+            'customer_name' => 'Budi Customer',
+            'customer_email' => 'budi@example.com',
+            'installation_address' => 'Jl. Sudirman No. 1',
             'payment_method' => 'qris',
             'status' => 'order_received',
             'payment_status' => 'paid',
-            'subtotal' => 500000.00,
-            'grand_total' => 500000.00,
+            'subtotal' => 1500000.00,
+            'grand_total' => 1500000.00,
         ]);
 
-        // 3. List orders
-        $listResponse = $this->actingAs($this->admin, 'sanctum')
-            ->getJson('/api/admin/orders');
-
-        $listResponse->assertStatus(200)
-            ->assertJsonPath('data.0.order_code', 'ORD-2026-0001');
-
-        // 4. View order details
-        $showResponse = $this->actingAs($this->admin, 'sanctum')
-            ->getJson('/api/admin/orders/' . $order->id);
-
-        $showResponse->assertStatus(200)
-            ->assertJsonPath('data.customer_name', 'John Doe')
-            ->assertJsonPath('data.payment_status', 'paid');
-    }
-
-    public function test_admin_can_update_valid_order_status_and_invalid_is_rejected(): void
-    {
-        $order = Order::create([
+        Order::create([
             'public_id' => (string) Str::uuid(),
             'order_code' => 'ORD-2026-0002',
-            'customer_name' => 'Jane Doe',
-            'installation_address' => 'Jl. Sudirman No. 10',
+            'customer_name' => 'Siti Aminah',
+            'customer_email' => 'siti@example.com',
+            'installation_address' => 'Jl. Thamrin No. 2',
             'payment_method' => 'qris',
-            'status' => 'order_received',
-            'payment_status' => 'paid',
-            'subtotal' => 1000000.00,
-            'grand_total' => 1000000.00,
-        ]);
-
-        // 5. Update valid status transition (order_received -> installation_in_progress)
-        $validResponse = $this->actingAs($this->admin, 'sanctum')
-            ->patchJson('/api/admin/orders/' . $order->id . '/status', [
-                'status' => 'installation_in_progress',
-                'note' => 'Jadwal instalasi telah disetujui',
-            ]);
-
-        $validResponse->assertStatus(200)
-            ->assertJsonPath('data.status', 'installation_in_progress');
-
-        // 9. Status history is recorded correctly
-        $this->assertDatabaseHas('order_status_histories', [
-            'order_id' => $order->id,
             'status' => 'installation_in_progress',
-            'note' => 'Jadwal instalasi telah disetujui',
+            'payment_status' => 'paid',
+            'subtotal' => 2000000.00,
+            'grand_total' => 2000000.00,
         ]);
 
-        // 6. Invalid status transition (installation_in_progress -> awaiting_payment directly) -> 422
-        $invalidResponse = $this->actingAs($this->admin, 'sanctum')
-            ->patchJson('/api/admin/orders/' . $order->id . '/status', [
-                'status' => 'awaiting_payment',
-            ]);
+        // 1. List orders -> 200
+        $response = $this->actingAs($this->admin, 'sanctum')->getJson('/api/admin/orders');
+        $response->assertStatus(200)
+            ->assertJsonStructure(['data', 'current_page', 'total'])
+            ->assertJsonCount(2, 'data');
 
-        $invalidResponse->assertStatus(422)
-            ->assertJsonValidationErrors(['status']);
+        // 2. Filter by status -> only matching status returned
+        $filteredResponse = $this->actingAs($this->admin, 'sanctum')->getJson('/api/admin/orders?status=order_received');
+        $filteredResponse->assertStatus(200)
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.status', 'order_received');
+
+        // 3. Search query matches order_code or customer name
+        $searchResponse = $this->actingAs($this->admin, 'sanctum')->getJson('/api/admin/orders?search=ORD-2026-0002');
+        $searchResponse->assertStatus(200)
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.customer_name', 'Siti Aminah');
     }
 
-    public function test_admin_can_assign_active_technician_and_inactive_technician_is_rejected(): void
+    public function test_admin_can_view_order_details_and_update_status(): void
     {
-        $activeTech = Technician::create([
-            'name' => 'Budi Santoso',
-            'phone_e164' => '+62811111111',
-            'is_active' => true,
-        ]);
-
-        $inactiveTech = Technician::create([
-            'name' => 'Andi Wijaya',
-            'phone_e164' => '+62822222222',
-            'is_active' => false,
-        ]);
-
         $order = Order::create([
             'public_id' => (string) Str::uuid(),
             'order_code' => 'ORD-2026-0003',
@@ -150,23 +102,47 @@ class AdminOrderManagementTest extends TestCase
             'grand_total' => 800000.00,
         ]);
 
-        // 8. Inactive technician is rejected -> 422
-        $inactiveResponse = $this->actingAs($this->admin, 'sanctum')
-            ->postJson('/api/admin/orders/' . $order->id . '/assign-technician', [
-                'technician_id' => $inactiveTech->id,
+        // 4. View details -> 200 with OrderResource structure
+        $detailResponse = $this->actingAs($this->admin, 'sanctum')->getJson('/api/admin/orders/' . $order->id);
+        $detailResponse->assertStatus(200)
+            ->assertJsonStructure([
+                'data' => [
+                    'id',
+                    'public_id',
+                    'order_code',
+                    'customer_name',
+                    'status',
+                    'payment_status',
+                    'items',
+                    'payments',
+                    'status_history',
+                ],
             ]);
 
-        $inactiveResponse->assertStatus(422)
-            ->assertJsonValidationErrors(['technician']);
-
-        // 7. Active technician assignment succeeds -> 200
-        $activeResponse = $this->actingAs($this->admin, 'sanctum')
-            ->postJson('/api/admin/orders/' . $order->id . '/assign-technician', [
-                'technician_id' => $activeTech->id,
+        // 5. Valid status update -> 200 and logs to status history
+        $updateResponse = $this->actingAs($this->admin, 'sanctum')
+            ->patchJson('/api/admin/orders/' . $order->id . '/status', [
+                'status' => 'installation_in_progress',
+                'note' => 'Teknisi tiba di lokasi.',
             ]);
 
-        $activeResponse->assertStatus(200)
-            ->assertJsonPath('data.technician.name', 'Budi Santoso');
+        $updateResponse->assertStatus(200)
+            ->assertJsonPath('data.status', 'installation_in_progress');
+
+        $this->assertDatabaseHas('order_status_histories', [
+            'order_id' => $order->id,
+            'status' => 'installation_in_progress',
+            'note' => 'Teknisi tiba di lokasi.',
+        ]);
+
+        // 6. Invalid status transition -> 422
+        $invalidResponse = $this->actingAs($this->admin, 'sanctum')
+            ->patchJson('/api/admin/orders/' . $order->id . '/status', [
+                'status' => 'awaiting_payment',
+            ]);
+
+        $invalidResponse->assertStatus(422)
+            ->assertJsonValidationErrors(['status']);
     }
 
     public function test_customer_order_access_remains_restricted_to_own_orders(): void

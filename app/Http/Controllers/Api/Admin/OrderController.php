@@ -78,28 +78,4 @@ class OrderController extends Controller
             'data' => new OrderResource($updatedOrder),
         ]);
     }
-
-    public function assignTechnician(Request $request, Order $order): JsonResponse
-    {
-        $request->validate([
-            'technician_id' => ['required', 'integer', 'exists:technicians,id'],
-        ]);
-
-        $technician = \App\Models\Technician::whereKey($request->input('technician_id'))
-            ->where('is_active', true)
-            ->first();
-
-        if (!$technician) {
-            throw \Illuminate\Validation\ValidationException::withMessages([
-                'technician' => ['Teknisi tidak aktif atau tidak ditemukan.'],
-            ]);
-        }
-
-        $order->update(['technician_id' => $technician->id]);
-
-        return response()->json([
-            'message' => 'Teknisi berhasil ditugaskan.',
-            'data' => new OrderResource($order->fresh()->load(['user', 'items', 'payments', 'statusHistories', 'technician'])),
-        ]);
-    }
 }
